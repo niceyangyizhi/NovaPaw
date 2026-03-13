@@ -76,13 +76,13 @@ Inspect status, version, and recent logs without starting a conversation. Same
 behavior as sending `/daemon status` etc. in chat (CLI can show local info when
 the app is not running).
 
-| Command                      | Description                                                                               |
-| ---------------------------- | ----------------------------------------------------------------------------------------- |
+| Command                        | Description                                                                               |
+| ------------------------------ | ----------------------------------------------------------------------------------------- |
 | `novapaw daemon status`        | Status (config, working dir, memory manager)                                              |
 | `novapaw daemon restart`       | Print instructions (in-chat /daemon restart does in-process reload)                       |
 | `novapaw daemon reload-config` | Re-read and validate config (channel/MCP changes need /daemon restart or process restart) |
 | `novapaw daemon version`       | Version and paths                                                                         |
-| `novapaw daemon logs [-n N]`   | Last N lines of log (default 100; from `novapaw.log` in working dir)                        |
+| `novapaw daemon logs [-n N]`   | Last N lines of log (default 100; from `novapaw.log` in working dir)                      |
 
 ```bash
 novapaw daemon status
@@ -101,8 +101,8 @@ variables power many built-in tools (e.g. web search).
 
 Manage LLM providers and the active model.
 
-| Command                                | What it does                                         |
-| -------------------------------------- | ---------------------------------------------------- |
+| Command                                  | What it does                                         |
+| ---------------------------------------- | ---------------------------------------------------- |
 | `novapaw models list`                    | Show all providers, API key status, and active model |
 | `novapaw models config`                  | Full interactive setup: API keys → active model      |
 | `novapaw models config-key [provider]`   | Configure a single provider's API key                |
@@ -190,8 +190,8 @@ novapaw models set-llm          # Switch to a different Ollama model
 
 Manage environment variables used by tools and skills at runtime.
 
-| Command                   | What it does                  |
-| ------------------------- | ----------------------------- |
+| Command                     | What it does                  |
+| --------------------------- | ----------------------------- |
 | `novapaw env list`          | List all configured variables |
 | `novapaw env set KEY VALUE` | Set or update a variable      |
 | `novapaw env delete KEY`    | Delete a variable             |
@@ -219,8 +219,8 @@ Manage channel configuration (iMessage, Discord, DingTalk, Feishu, QQ,
 Console, etc.). **Note:** Use `config` for interactive setup (no `configure`
 subcommand); use `remove` to uninstall custom channels (no `uninstall`).
 
-| Command                        | What it does                                                                                                      |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Command                          | What it does                                                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `novapaw channels list`          | Show all channels and their status (secrets masked)                                                               |
 | `novapaw channels install <key>` | Install a channel into `custom_channels/`: create stub or use `--path`/`--url`                                    |
 | `novapaw channels add <key>`     | Install and add to config; built-in channels only get config entry; supports `--path`/`--url`                     |
@@ -259,8 +259,8 @@ ask NovaPaw and send the reply". **Requires `novapaw app` to be running.**
 
 ### novapaw cron
 
-| Command                      | What it does                                  |
-| ---------------------------- | --------------------------------------------- |
+| Command                        | What it does                                  |
+| ------------------------------ | --------------------------------------------- |
 | `novapaw cron list`            | List all jobs                                 |
 | `novapaw cron get <job_id>`    | Show a job's spec                             |
 | `novapaw cron state <job_id>`  | Show runtime state (next run, last run, etc.) |
@@ -341,8 +341,8 @@ Manage chat sessions via the API. **Requires `novapaw app` to be running.**
 
 ### novapaw chats
 
-| Command                                | What it does                                                  |
-| -------------------------------------- | ------------------------------------------------------------- |
+| Command                                  | What it does                                                  |
+| ---------------------------------------- | ------------------------------------------------------------- |
 | `novapaw chats list`                     | List all sessions (supports `--user-id`, `--channel` filters) |
 | `novapaw chats get <id>`                 | View a session's details and message history                  |
 | `novapaw chats create ...`               | Create a new session                                          |
@@ -367,8 +367,8 @@ Extend NovaPaw's capabilities with skills (PDF reading, web search, etc.).
 
 ### novapaw skills
 
-| Command               | What it does                                      |
-| --------------------- | ------------------------------------------------- |
+| Command                 | What it does                                      |
+| ----------------------- | ------------------------------------------------- |
 | `novapaw skills list`   | Show all skills and their enabled/disabled status |
 | `novapaw skills config` | Interactively enable/disable skills (checkbox UI) |
 
@@ -402,11 +402,11 @@ novapaw clean --dry-run   # Only list what would be removed
 
 Every `novapaw` subcommand inherits:
 
-| Option          | Default     | Description                                    |
-| --------------- | ----------- | ---------------------------------------------- |
+| Option          | Default     | Description                                      |
+| --------------- | ----------- | ------------------------------------------------ |
 | `--host`        | `127.0.0.1` | API host (auto-detected from last `novapaw app`) |
 | `--port`        | `8088`      | API port (auto-detected from last `novapaw app`) |
-| `-h` / `--help` |             | Show help message                              |
+| `-h` / `--help` |             | Show help message                                |
 
 If the server runs on a non-default address, pass these globally:
 
@@ -420,8 +420,8 @@ All config and data live in `~/.novapaw` by default: `config.json`,
 `HEARTBEAT.md`, `jobs.json`, `chats.json`, skills, memory, and agent persona
 files.
 
-| Variable            | Description                         |
-| ------------------- | ----------------------------------- |
+| Variable              | Description                         |
+| --------------------- | ----------------------------------- |
 | `NOVAPAW_WORKING_DIR` | Override the working directory path |
 | `NOVAPAW_CONFIG_FILE` | Override the config file path       |
 
@@ -431,8 +431,8 @@ See [Config & Working Directory](./config) for full details.
 
 ## Command overview
 
-| Command          | Subcommands                                                                                                                            | Requires server? |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- | :--------------: |
+| Command            | Subcommands                                                                                                                            | Requires server? |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | :--------------: |
 | `novapaw init`     | —                                                                                                                                      |        No        |
 | `novapaw app`      | —                                                                                                                                      |  — (starts it)   |
 | `novapaw models`   | `list` · `config` · `config-key` · `set-llm` · `download` · `local` · `remove-local` · `ollama-pull` · `ollama-list` · `ollama-remove` |        No        |

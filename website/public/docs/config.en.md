@@ -23,7 +23,7 @@ you'll find inside:
 | -------------------- | ------------------------------------------------------------------ |
 | `config.json`        | Channel on/off and credentials, heartbeat settings, language, etc. |
 | `HEARTBEAT.md`       | Prompt content used each heartbeat run                             |
-| `jobs.json`          | Cron job list (managed via `novapaw cron` or API)                    |
+| `jobs.json`          | Cron job list (managed via `novapaw cron` or API)                  |
 | `chats.json`         | Chat/session list (file storage mode)                              |
 | `token_usage.json`   | LLM token usage records (by date and model)                        |
 | `active_skills/`     | Skills currently active and used by the agent                      |
@@ -45,15 +45,15 @@ you'll find inside:
 If you don't want to use `~/.novapaw`, you can override the working directory or
 specific file names:
 
-| Variable                 | Default            | Meaning                                                                                                                                                                                 |
-| ------------------------ | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NOVAPAW_WORKING_DIR`      | `~/.novapaw`         | Working directory; config, heartbeat, jobs, chats, skills, and memory all live here                                                                                                     |
-| `NOVAPAW_SECRET_DIR`       | `~/.novapaw.secret`  | Secret directory (sibling of working dir); stores `providers.json` (model provider settings, API keys) and `envs.json` (environment variables). In Docker, set to `/app/working.secret` |
-| `NOVAPAW_CONFIG_FILE`      | `config.json`      | Config file name (relative to working dir)                                                                                                                                              |
-| `NOVAPAW_HEARTBEAT_FILE`   | `HEARTBEAT.md`     | Heartbeat prompt file name (relative to working dir)                                                                                                                                    |
-| `NOVAPAW_JOBS_FILE`        | `jobs.json`        | Cron jobs file name (relative to working dir)                                                                                                                                           |
-| `NOVAPAW_CHATS_FILE`       | `chats.json`       | Chats file name (relative to working dir)                                                                                                                                               |
-| `NOVAPAW_TOKEN_USAGE_FILE` | `token_usage.json` | Token usage record file name (relative to working dir)                                                                                                                                  |
+| Variable                   | Default             | Meaning                                                                                                                                                                                 |
+| -------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NOVAPAW_WORKING_DIR`      | `~/.novapaw`        | Working directory; config, heartbeat, jobs, chats, skills, and memory all live here                                                                                                     |
+| `NOVAPAW_SECRET_DIR`       | `~/.novapaw.secret` | Secret directory (sibling of working dir); stores `providers.json` (model provider settings, API keys) and `envs.json` (environment variables). In Docker, set to `/app/working.secret` |
+| `NOVAPAW_CONFIG_FILE`      | `config.json`       | Config file name (relative to working dir)                                                                                                                                              |
+| `NOVAPAW_HEARTBEAT_FILE`   | `HEARTBEAT.md`      | Heartbeat prompt file name (relative to working dir)                                                                                                                                    |
+| `NOVAPAW_JOBS_FILE`        | `jobs.json`         | Cron jobs file name (relative to working dir)                                                                                                                                           |
+| `NOVAPAW_CHATS_FILE`       | `chats.json`        | Chats file name (relative to working dir)                                                                                                                                               |
+| `NOVAPAW_TOKEN_USAGE_FILE` | `token_usage.json`  | Token usage record file name (relative to working dir)                                                                                                                                  |
 
 | `NOVAPAW_LOG_LEVEL` | `info` | Log level for the app (`debug`, `info`, `warning`, `error`, `critical`) |
 | `NOVAPAW_MEMORY_COMPACT_THRESHOLD` | `100000` | Character threshold to trigger memory compaction |
@@ -186,12 +186,12 @@ Each channel has a common base and channel-specific fields.
 
 **`channels.feishu`** — Feishu / Lark (飞书)
 
-| Field                | Type   | Default          | Description                         |
-| -------------------- | ------ | ---------------- | ----------------------------------- |
-| `app_id`             | string | `""`             | Feishu App ID                       |
-| `app_secret`         | string | `""`             | Feishu App Secret                   |
-| `encrypt_key`        | string | `""`             | Event encryption key (optional)     |
-| `verification_token` | string | `""`             | Event verification token (optional) |
+| Field                | Type   | Default            | Description                         |
+| -------------------- | ------ | ------------------ | ----------------------------------- |
+| `app_id`             | string | `""`               | Feishu App ID                       |
+| `app_secret`         | string | `""`               | Feishu App Secret                   |
+| `encrypt_key`        | string | `""`               | Event encryption key (optional)     |
+| `verification_token` | string | `""`               | Event verification token (optional) |
 | `media_dir`          | string | `~/.novapaw/media` | Directory for received media files  |
 
 **`channels.qq`** — QQ Bot
@@ -215,11 +215,11 @@ Each channel has a common base and channel-specific fields.
 
 #### `agents` — Agent behavior settings
 
-| Field                                | Type           | Default   | Description                                                             |
-| ------------------------------------ | -------------- | --------- | ----------------------------------------------------------------------- |
-| `agents.defaults.heartbeat`          | object \| null | See below | Heartbeat configuration                                                 |
-| `agents.running`                     | object         | See below | Agent runtime behavior configuration                                    |
-| `agents.language`                    | string         | `"zh"`    | Language for agent MD files (`"zh"` / `"en"` / `"ru"`)                  |
+| Field                                | Type           | Default   | Description                                                               |
+| ------------------------------------ | -------------- | --------- | ------------------------------------------------------------------------- |
+| `agents.defaults.heartbeat`          | object \| null | See below | Heartbeat configuration                                                   |
+| `agents.running`                     | object         | See below | Agent runtime behavior configuration                                      |
+| `agents.language`                    | string         | `"zh"`    | Language for agent MD files (`"zh"` / `"en"` / `"ru"`)                    |
 | `agents.installed_md_files_language` | string \| null | `null`    | Tracks which language's MD files are installed; managed by `novapaw init` |
 
 **`agents.running`** — Agent runtime behavior
@@ -250,8 +250,8 @@ Each channel has a common base and channel-specific fields.
 
 #### `last_api` — Last used API address
 
-| Field  | Type           | Default | Description                   |
-| ------ | -------------- | ------- | ----------------------------- |
+| Field  | Type           | Default | Description                     |
+| ------ | -------------- | ------- | ------------------------------- |
 | `host` | string \| null | `null`  | Last host used by `novapaw app` |
 | `port` | int \| null    | `null`  | Last port used by `novapaw app` |
 
@@ -349,11 +349,11 @@ can read them via `os.environ`.
 
 Skills extend the agent's capabilities. They live in three directories:
 
-| Directory                     | Purpose                                                             |
-| ----------------------------- | ------------------------------------------------------------------- |
-| Built-in (in source code)     | Shipped with NovaPaw — docx, pdf, pptx, xlsx, news, email, cron, etc. |
-| `~/.novapaw/customized_skills/` | User-created skills                                                 |
-| `~/.novapaw/active_skills/`     | Currently active skills (synced from built-in + customized)         |
+| Directory                       | Purpose                                                               |
+| ------------------------------- | --------------------------------------------------------------------- |
+| Built-in (in source code)       | Shipped with NovaPaw — docx, pdf, pptx, xlsx, news, email, cron, etc. |
+| `~/.novapaw/customized_skills/` | User-created skills                                                   |
+| `~/.novapaw/active_skills/`     | Currently active skills (synced from built-in + customized)           |
 
 Each skill is a directory with a `SKILL.md` file (YAML front matter with `name`
 and `description`), and optional `references/` and `scripts/` subdirectories.
@@ -372,8 +372,8 @@ NovaPaw has persistent cross-conversation memory: it automatically compresses co
 
 Memory files are stored in two locations:
 
-| File / Directory                | Purpose                                                               |
-| ------------------------------- | --------------------------------------------------------------------- |
+| File / Directory                  | Purpose                                                               |
+| --------------------------------- | --------------------------------------------------------------------- |
 | `~/.novapaw/MEMORY.md`            | Long-lived key information (decisions, preferences, persistent facts) |
 | `~/.novapaw/memory/YYYY-MM-DD.md` | Daily logs (notes, runtime context, auto-generated summaries)         |
 
