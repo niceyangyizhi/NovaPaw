@@ -10,7 +10,7 @@ import {
   Download,
   ChevronDown,
 } from "lucide-react";
-import { CopawMascot } from "./CopawMascot";
+import { NovaPawMascot } from "./NovaPawMascot";
 import { t, type Lang } from "../i18n";
 
 const AGENTSCOPE_LOGO_SIZE = 22;
@@ -116,7 +116,7 @@ export function Nav({
             className="nav-brand-logo"
             style={{ marginTop: -5, display: "flex" }}
           >
-            <CopawMascot size={60} />
+            <NovaPawMascot size={60} />
           </span>
         </Link>
         <div
@@ -200,11 +200,11 @@ export function Nav({
             <span>{t(lang, "nav.lang")}</span>
           </button>
           <a
-            href="https://github.com/agentscope-ai/CoPaw"
+            href="https://github.com/agentscope-ai/NovaPaw"
             target="_blank"
             rel="noopener noreferrer"
             className={linkClass}
-            title="CoPaw on GitHub"
+            title="NovaPaw on GitHub"
           >
             <Github size={18} strokeWidth={1.5} aria-hidden />
             <span>{t(lang, "nav.github")}</span>
@@ -294,12 +294,12 @@ export function Nav({
           <Globe size={18} /> {t(lang, "nav.lang")}
         </button>
         <a
-          href="https://github.com/agentscope-ai/CoPaw"
+          href="https://github.com/agentscope-ai/NovaPaw"
           target="_blank"
           rel="noopener noreferrer"
           className={linkClass}
           onClick={() => setOpen(false)}
-          title="CoPaw on GitHub"
+          title="NovaPaw on GitHub"
         >
           <Github size={18} /> {t(lang, "nav.github")}
         </a>

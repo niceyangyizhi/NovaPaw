@@ -1,5 +1,5 @@
 /**
- * CoPaw branding logo (logo.png). Favicon uses copaw-symbol.svg.
+ * NovaPaw branding logo (logo.png). Favicon uses novapaw-symbol.svg.
  */
 interface CatPawIconProps {
   size: number;

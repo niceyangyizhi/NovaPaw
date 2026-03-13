@@ -65,8 +65,8 @@ function App() {
       <GlobalStyle />
       <ConfigProvider
         {...bailianTheme}
-        prefix="copaw"
-        prefixCls="copaw"
+        prefix="novapaw"
+        prefixCls="novapaw"
         locale={antdLocale}
       >
         <MainLayout />

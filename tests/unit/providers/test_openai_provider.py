@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import copaw.providers.openai_provider as openai_provider_module
-from copaw.providers.openai_provider import OpenAIProvider
+import novapaw.providers.openai_provider as openai_provider_module
+from novapaw.providers.openai_provider import OpenAIProvider
 
 
 def _make_provider() -> OpenAIProvider:

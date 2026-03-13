@@ -17,8 +17,8 @@ cookbook/_build
 dist/
 .wheelshim/
 # Console frontend build (generated in Docker/CI, do not commit)
-src/copaw/console/dist/
-src/copaw/console/
+src/novapaw/console/dist/
+src/novapaw/console/
 
 # frontend (website)
 website/node_modules/

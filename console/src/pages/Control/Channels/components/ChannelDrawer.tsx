@@ -35,19 +35,19 @@ interface ChannelDrawerProps {
   onSubmit: (values: Record<string, unknown>) => void;
 }
 
-// Doc URLs per channel (anchors on https://copaw.agentscope.io/docs/channels)
+// Doc URLs per channel (anchors on https://novapaw.agentscope.io/docs/channels)
 const CHANNEL_DOC_URLS: Partial<Record<ChannelKey, string>> = {
   dingtalk:
-    "https://copaw.agentscope.io/docs/channels/#%E9%92%89%E9%92%89%E6%8E%A8%E8%8D%90",
-  feishu: "https://copaw.agentscope.io/docs/channels/#%E9%A3%9E%E4%B9%A6",
+    "https://novapaw.agentscope.io/docs/channels/#%E9%92%89%E9%92%89%E6%8E%A8%E8%8D%90",
+  feishu: "https://novapaw.agentscope.io/docs/channels/#%E9%A3%9E%E4%B9%A6",
   imessage:
-    "https://copaw.agentscope.io/docs/channels/#iMessage%E4%BB%85-macOS",
-  discord: "https://copaw.agentscope.io/docs/channels/#Discord",
-  qq: "https://copaw.agentscope.io/docs/channels/#QQ",
-  telegram: "https://copaw.agentscope.io/docs/channels/#Telegram",
-  mqtt: "https://copaw.agentscope.io/docs/channels/#MQTT",
-  mattermost: "https://copaw.agentscope.io/docs/channels/#Mattermost",
-  matrix: "https://copaw.agentscope.io/docs/channels/#Matrix",
+    "https://novapaw.agentscope.io/docs/channels/#iMessage%E4%BB%85-macOS",
+  discord: "https://novapaw.agentscope.io/docs/channels/#Discord",
+  qq: "https://novapaw.agentscope.io/docs/channels/#QQ",
+  telegram: "https://novapaw.agentscope.io/docs/channels/#Telegram",
+  mqtt: "https://novapaw.agentscope.io/docs/channels/#MQTT",
+  mattermost: "https://novapaw.agentscope.io/docs/channels/#Mattermost",
+  matrix: "https://novapaw.agentscope.io/docs/channels/#Matrix",
 };
 const twilioConsoleUrl = "https://console.twilio.com";
 
@@ -215,7 +215,7 @@ export function ChannelDrawer({
               <Input placeholder="Optional" />
             </Form.Item>
             <Form.Item name="media_dir" label="Media Dir">
-              <Input placeholder="~/.copaw/media" />
+              <Input placeholder="~/.novapaw/media" />
             </Form.Item>
           </>
         );
@@ -365,7 +365,7 @@ export function ChannelDrawer({
               <Input.Password placeholder="Mattermost bot token" />
             </Form.Item>
             <Form.Item name="media_dir" label="Media Dir">
-              <Input placeholder="~/.copaw/media/mattermost" />
+              <Input placeholder="~/.novapaw/media/mattermost" />
             </Form.Item>
             <Form.Item
               name="show_typing"

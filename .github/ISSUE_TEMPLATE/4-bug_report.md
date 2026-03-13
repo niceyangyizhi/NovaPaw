@@ -6,10 +6,10 @@ labels: ["bug", "triage"]
 assignees: []
 ---
 
-## CoPaw Version
+## NovaPaw Version
 
-[Provide the version of CoPaw you are using, e.g. 0.x.x or git commit hash.]
-[Using `copaw --version` in your command line or checking the version in the console UI can help.]
+[Provide the version of NovaPaw you are using, e.g. 0.x.x or git commit hash.]
+[Using `novapaw --version` in your command line or checking the version in the console UI can help.]
 
 ## Description
 
@@ -33,7 +33,7 @@ assignees: []
 
 ## Environment
 
-- **CoPaw version:** [e.g. 0.x.x or git commit]
+- **NovaPaw version:** [e.g. 0.x.x or git commit]
 - **OS:** [e.g. macOS 14, Ubuntu 22.04, Windows 11]
 - **Install method:** [pip / one-line install / Docker / from source]
 - **Python version (if applicable):** [e.g. 3.10]

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from copaw.providers import ollama_manager
+from novapaw.providers import ollama_manager
 
 
 def _make_fake_ollama(timeout_box: dict, response: dict):
@@ -25,7 +25,7 @@ def test_list_models_uses_default_timeout(monkeypatch) -> None:
         {"models": [{"model": "qwen2:7b", "size": 1}]},
     )
 
-    monkeypatch.delenv("COPAW_MODEL_PROVIDER_CHECK_TIMEOUT", raising=False)
+    monkeypatch.delenv("NOVAPAW_MODEL_PROVIDER_CHECK_TIMEOUT", raising=False)
     monkeypatch.setattr(
         ollama_manager,
         "_ensure_ollama",

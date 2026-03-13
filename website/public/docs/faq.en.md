@@ -5,22 +5,22 @@ Click a question to expand the answer.
 
 ---
 
-### CoPaw vs OpenClaw: Feature Comparison
+### NovaPaw vs OpenClaw: Feature Comparison
 
 Please check the [Comparison](/docs/comparison) page for detailed feature comparison.
 
-### How to install CoPaw
+### How to install NovaPaw
 
-CoPaw supports multiple installation methods. See
-[Quick Start](https://copaw.agentscope.io/docs/quickstart) for details:
+NovaPaw supports multiple installation methods. See
+[Quick Start](https://novapaw.agentscope.io/docs/quickstart) for details:
 
 1. One-line installer (sets up Python automatically)
 
 ```
 # macOS / Linux:
-curl -fsSL https://copaw.agentscope.io/install.sh | bash
+curl -fsSL https://novapaw.agentscope.io/install.sh | bash
 # Windows (PowerShell):
-irm https://copaw.agentscope.io/install.ps1 | iex
+irm https://novapaw.agentscope.io/install.ps1 | iex
 # For latest instructions, refer to docs and prefer pip if needed.
 ```
 
@@ -29,7 +29,7 @@ irm https://copaw.agentscope.io/install.ps1 | iex
 Python version requirement: >= 3.10, < 3.14
 
 ```
-pip install copaw
+pip install novapaw
 ```
 
 3. Install with Docker
@@ -38,11 +38,11 @@ If Docker is installed, run the following commands and then open
 `http://127.0.0.1:8088/` in your browser:
 
 ```
-docker pull agentscope/copaw:latest
+docker pull agentscope/novapaw:latest
 docker run -p 127.0.0.1:8088:8088 \
-  -v copaw-data:/app/working \
-  -v copaw-secrets:/app/working.secret \
-  agentscope/copaw:latest
+  -v novapaw-data:/app/working \
+  -v novapaw-secrets:/app/working.secret \
+  agentscope/novapaw:latest
 ```
 
 > **⚠️ Special Notice for Windows Enterprise LTSC Users**
@@ -54,9 +54,9 @@ docker run -p 127.0.0.1:8088:8088 \
 >    The script completes file installation. Due to **Constrained Language Mode**, it cannot automatically update environment variables. Manually configure as follows:
 >
 >    - **Locate the installation directory**:
->      - Check if `uv` is available: Enter `uv --version` in CMD. If a version number appears, **only configure the CoPaw path**. If you receive the prompt `'uv' is not recognized as an internal or external command, operable program or batch file,` configure both paths.
+>      - Check if `uv` is available: Enter `uv --version` in CMD. If a version number appears, **only configure the NovaPaw path**. If you receive the prompt `'uv' is not recognized as an internal or external command, operable program or batch file,` configure both paths.
 >      - uv path (choose one based on installation location; use if step 1 fails): Typically `%USERPROFILE%\.local\bin`, `%USERPROFILE%\AppData\Local\uv`, or the `Scripts` folder within your Python installation directory
->      - CoPaw path: Typically located at `%USERPROFILE%\.copaw\bin`.
+>      - NovaPaw path: Typically located at `%USERPROFILE%\.novapaw\bin`.
 >    - **Manually add to the system's Path environment variable**:
 >      - Press `Win + R`, type `sysdm.cpl` and press Enter to open System Properties.
 >      - Click “Advanced” -> “Environment Variables”.
@@ -68,26 +68,26 @@ docker run -p 127.0.0.1:8088:8088 \
 > Due to **Constrained Language Mode**, the script may fail to automatically download `uv`.
 >
 > - **Manually install uv**: Refer to the [GitHub Release](https://github.com/astral-sh/uv/releases) to download `uv.exe` and place it in `%USERPROFILE%\.local\bin` or `%USERPROFILE%\AppData\Local\uv`; or ensure Python is installed and run `python -m pip install -U uv`.
-> - **Configure `uv` environment variables**: Add the `uv` directory and `%USERPROFILE%\.copaw\bin` to your system's `Path` variable.
-> - **Re-run the installation**: Open a new terminal and execute the installation script again to complete the `CoPaw` installation.
-> - **Configure the `CoPaw` environment variable**: Add `%USERPROFILE%\.copaw\bin` to your system's `Path` variable.
+> - **Configure `uv` environment variables**: Add the `uv` directory and `%USERPROFILE%\.novapaw\bin` to your system's `Path` variable.
+> - **Re-run the installation**: Open a new terminal and execute the installation script again to complete the `NovaPaw` installation.
+> - **Configure the `NovaPaw` environment variable**: Add `%USERPROFILE%\.novapaw\bin` to your system's `Path` variable.
 
-### How to update CoPaw
+### How to update NovaPaw
 
-To update CoPaw, use the method matching your installation type:
+To update NovaPaw, use the method matching your installation type:
 
 1. If installed via one-line script, re-run the installer to upgrade.
 
 2. If installed via pip, run:
 
 ```
-pip install --upgrade copaw
+pip install --upgrade novapaw
 ```
 
 3. If installed from source, pull the latest code and reinstall:
 
 ```
-cd CoPaw
+cd NovaPaw
 git pull origin main
 pip install -e .
 ```
@@ -95,56 +95,56 @@ pip install -e .
 4. If using Docker, pull the latest image and restart the container:
 
 ```
-docker pull agentscope/copaw:latest
+docker pull agentscope/novapaw:latest
 docker run -p 127.0.0.1:8088:8088 \
-  -v copaw-data:/app/working \
-  -v copaw-secrets:/app/working.secret \
-  agentscope/copaw:latest
+  -v novapaw-data:/app/working \
+  -v novapaw-secrets:/app/working.secret \
+  agentscope/novapaw:latest
 ```
 
-After upgrading, restart the service with `copaw app`.
+After upgrading, restart the service with `novapaw app`.
 
-### How to initialize and start CoPaw service
+### How to initialize and start NovaPaw service
 
 Recommended quick initialization:
 
 ```bash
-copaw init --defaults
+novapaw init --defaults
 ```
 
 Start service:
 
 ```bash
-copaw app
+novapaw app
 ```
 
 The default Console URL is `http://127.0.0.1:8088/`. After quick init, you can
 open Console and customize settings. See
-[Quick Start](https://copaw.agentscope.io/docs/quickstart).
+[Quick Start](https://novapaw.agentscope.io/docs/quickstart).
 
 ### Open-source repository
 
-CoPaw is open source. Official repository:
-`https://github.com/agentscope-ai/CoPaw`
+NovaPaw is open source. Official repository:
+`https://github.com/agentscope-ai/NovaPaw`
 
 ### Where to check latest version upgrade details
 
-You can check version changes in CoPaw GitHub
-[Releases](https://github.com/agentscope-ai/CoPaw/releases).
+You can check version changes in NovaPaw GitHub
+[Releases](https://github.com/agentscope-ai/NovaPaw/releases).
 
 ### How to configure models
 
 In Console, go to **Settings -> Models** to configure. See the
-[Models](https://copaw.agentscope.io/docs/models) doc for details:
+[Models](https://novapaw.agentscope.io/docs/models) doc for details:
 
 - Cloud models: fill provider API key (e.g. ModelScope, DashScope, or custom),
   then select the active model.
 - Local models: supports `llama.cpp`, `MLX`, and Ollama. After download, select
   the active model on the same page.
 
-You can also use `copaw models` CLI commands for configuration, download, and
+You can also use `novapaw models` CLI commands for configuration, download, and
 switching. See
-[CLI -> Models and environment variables -> copaw models](https://copaw.agentscope.io/docs/cli#copaw-models).
+[CLI -> Models and environment variables -> novapaw models](https://novapaw.agentscope.io/docs/cli#novapaw-models).
 
 ### Troubleshooting scheduled (cron) tasks
 
@@ -152,11 +152,11 @@ In Console, go to **Control -> Cron Jobs** to create and manage scheduled tasks.
 
 ![cron](https://img.alicdn.com/imgextra/i2/O1CN01sL8ZYj1QJtpXs9iKE_!!6000000001956-2-tps-3814-1954.png)
 
-The easiest way to create a cron job is to talk to CoPaw in the channel where you want the results. For example, say: “Create a scheduled task that reminds me to drink water every five minutes.” You can then see the enabled job in Console.
+The easiest way to create a cron job is to talk to NovaPaw in the channel where you want the results. For example, say: “Create a scheduled task that reminds me to drink water every five minutes.” You can then see the enabled job in Console.
 
 If a scheduled task does not run as expected, try the following:
 
-1. Confirm that the CoPaw service is running.
+1. Confirm that the NovaPaw service is running.
 
 2. Check that the task **Status** is **Enabled**.
 
@@ -178,7 +178,7 @@ If a scheduled task does not run as expected, try the following:
 
    ![cron](https://img.alicdn.com/imgextra/i2/O1CN01iNoLp229bRiIdvJKK_!!6000000008086-2-tps-3020-778.png)
 
-6. To verify that the task was created and can run, click **Execute Now**. If it works, you should see the reply in the target channel. You can also ask CoPaw: “Trigger the ‘drink water reminder’ task I just created.”
+6. To verify that the task was created and can run, click **Execute Now**. If it works, you should see the reply in the target channel. You can also ask NovaPaw: “Trigger the ‘drink water reminder’ task I just created.”
 
    ![exec](https://img.alicdn.com/imgextra/i3/O1CN01nGtc3p1o5kN0d01mf_!!6000000005174-2-tps-3020-778.png)
 
@@ -186,12 +186,12 @@ If a scheduled task does not run as expected, try the following:
 
 Go to **Agent -> Skills** in Console. You can enable/disable Skills, create
 custom Skills, and import Skills from Skills Hub. See
-[Skills](https://copaw.agentscope.io/docs/skills).
+[Skills](https://novapaw.agentscope.io/docs/skills).
 
 ### How to configure MCP
 
 Go to **Agent -> MCP** in Console. You can enable/disable/delete/create MCP
-clients there. See [MCP](https://copaw.agentscope.io/docs/mcp).
+clients there. See [MCP](https://novapaw.agentscope.io/docs/mcp).
 
 ### Common error
 
@@ -210,7 +210,7 @@ Cause 2: key is configured but still fails. In most cases, one of the
 configuration fields is incorrect (for example `base_url`, `api key`, or model
 name).
 
-CoPaw supports API keys obtained via DashScope Coding Plan. If it still fails,
+NovaPaw supports API keys obtained via DashScope Coding Plan. If it still fails,
 please check:
 
 - whether `base_url` is correct;
@@ -225,12 +225,12 @@ https://help.aliyun.com/zh/model-studio/coding-plan-quickstart#2531c37fd64f9
 ### How to get support when errors occur
 
 To speed up troubleshooting and fixes, please open an
-[issue](https://github.com/agentscope-ai/CoPaw/issues) in the CoPaw GitHub
+[issue](https://github.com/agentscope-ai/NovaPaw/issues) in the NovaPaw GitHub
 repository and attach the full error message and any error detail file.
 
 Console errors often include a path to an error detail file. For example:
 
-Error: Unknown agent error: AuthenticationError: Error code: 401 - {'error': {'message': "You didn't provide an API key. You need to provide your API key in an Authorization header using Bearer auth (i.e. Authorization: Bearer YOUR_KEY). ", 'type': 'invalid_request_error', 'param': None, 'code': None}, 'request_id': 'xxx'}(Details: /var/folders/.../copaw_query_error_qzbx1mv1.json)
+Error: Unknown agent error: AuthenticationError: Error code: 401 - {'error': {'message': "You didn't provide an API key. You need to provide your API key in an Authorization header using Bearer auth (i.e. Authorization: Bearer YOUR_KEY). ", 'type': 'invalid_request_error', 'param': None, 'code': None}, 'request_id': 'xxx'}(Details: /var/folders/.../novapaw_query_error_qzbx1mv1.json)
 
-Please upload that file (e.g. `/var/folders/.../copaw_query_error_qzbx1mv1.json`)
-and also provide your current model provider, model name, and CoPaw version.
+Please upload that file (e.g. `/var/folders/.../novapaw_query_error_qzbx1mv1.json`)
+and also provide your current model provider, model name, and NovaPaw version.

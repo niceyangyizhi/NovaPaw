@@ -1,6 +1,6 @@
 # CLI
 
-`copaw` is the command-line tool for CoPaw. This page is organized from
+`novapaw` is the command-line tool for NovaPaw. This page is organized from
 "get-up-and-running" to "advanced management" — read from top to bottom if
 you're new, or jump to the section you need.
 
@@ -13,14 +13,14 @@ you're new, or jump to the section you need.
 
 These are the commands you'll use on day one.
 
-### copaw init
+### novapaw init
 
 First-time setup. Walks you through configuration interactively.
 
 ```bash
-copaw init              # Interactive setup (recommended for first time)
-copaw init --defaults   # Non-interactive, use all defaults (good for scripts)
-copaw init --force      # Overwrite existing config files
+novapaw init              # Interactive setup (recommended for first time)
+novapaw init --defaults   # Non-interactive, use all defaults (good for scripts)
+novapaw init --force      # Overwrite existing config files
 ```
 
 **What the interactive flow covers (in order):**
@@ -36,17 +36,17 @@ copaw init --force      # Overwrite existing config files
 7. **Environment variables** — optionally add key-value pairs for tools.
 8. **HEARTBEAT.md** — edit the heartbeat checklist in your default editor.
 
-### copaw app
+### novapaw app
 
-Start the CoPaw server. Everything else — channels, cron jobs, the Console
+Start the NovaPaw server. Everything else — channels, cron jobs, the Console
 UI — depends on this.
 
 ```bash
-copaw app                             # Start on 127.0.0.1:8088
-copaw app --host 0.0.0.0 --port 9090 # Custom address
-copaw app --reload                    # Auto-reload on code change (dev)
-copaw app --workers 4                 # Multi-worker mode
-copaw app --log-level debug           # Verbose logging
+novapaw app                             # Start on 127.0.0.1:8088
+novapaw app --host 0.0.0.0 --port 9090 # Custom address
+novapaw app --reload                    # Auto-reload on code change (dev)
+novapaw app --workers 4                 # Multi-worker mode
+novapaw app --log-level debug           # Verbose logging
 ```
 
 | Option        | Default     | Description                                                   |
@@ -59,18 +59,18 @@ copaw app --log-level debug           # Verbose logging
 
 ### Console
 
-Once `copaw app` is running, open `http://127.0.0.1:8088/` in your browser to
+Once `novapaw app` is running, open `http://127.0.0.1:8088/` in your browser to
 access the **Console** — a web UI for chat, channels, cron, skills, models,
 and more. See [Console](./console) for a full walkthrough.
 
-If the frontend was not built, the root URL returns a JSON message like `{"message": "CoPaw Web Console is not available."}` but the API still works.
+If the frontend was not built, the root URL returns a JSON message like `{"message": "NovaPaw Web Console is not available."}` but the API still works.
 
 **To build the frontend:** in the project's `console/` directory run
 `npm ci && npm run build`, then copy the output to the package directory:
-`mkdir -p src/copaw/console && cp -R console/dist/. src/copaw/console/`.
+`mkdir -p src/novapaw/console && cp -R console/dist/. src/novapaw/console/`.
 Docker images and pip packages already include the Console.
 
-### copaw daemon
+### novapaw daemon
 
 Inspect status, version, and recent logs without starting a conversation. Same
 behavior as sending `/daemon status` etc. in chat (CLI can show local info when
@@ -78,74 +78,74 @@ the app is not running).
 
 | Command                      | Description                                                                               |
 | ---------------------------- | ----------------------------------------------------------------------------------------- |
-| `copaw daemon status`        | Status (config, working dir, memory manager)                                              |
-| `copaw daemon restart`       | Print instructions (in-chat /daemon restart does in-process reload)                       |
-| `copaw daemon reload-config` | Re-read and validate config (channel/MCP changes need /daemon restart or process restart) |
-| `copaw daemon version`       | Version and paths                                                                         |
-| `copaw daemon logs [-n N]`   | Last N lines of log (default 100; from `copaw.log` in working dir)                        |
+| `novapaw daemon status`        | Status (config, working dir, memory manager)                                              |
+| `novapaw daemon restart`       | Print instructions (in-chat /daemon restart does in-process reload)                       |
+| `novapaw daemon reload-config` | Re-read and validate config (channel/MCP changes need /daemon restart or process restart) |
+| `novapaw daemon version`       | Version and paths                                                                         |
+| `novapaw daemon logs [-n N]`   | Last N lines of log (default 100; from `novapaw.log` in working dir)                        |
 
 ```bash
-copaw daemon status
-copaw daemon version
-copaw daemon logs -n 50
+novapaw daemon status
+novapaw daemon version
+novapaw daemon logs -n 50
 ```
 
 ---
 
 ## Models & environment variables
 
-Before using CoPaw you need at least one LLM provider configured. Environment
+Before using NovaPaw you need at least one LLM provider configured. Environment
 variables power many built-in tools (e.g. web search).
 
-### copaw models
+### novapaw models
 
 Manage LLM providers and the active model.
 
 | Command                                | What it does                                         |
 | -------------------------------------- | ---------------------------------------------------- |
-| `copaw models list`                    | Show all providers, API key status, and active model |
-| `copaw models config`                  | Full interactive setup: API keys → active model      |
-| `copaw models config-key [provider]`   | Configure a single provider's API key                |
-| `copaw models set-llm`                 | Switch the active model (API keys unchanged)         |
-| `copaw models download <repo_id>`      | Download a local model (llama.cpp / MLX)             |
-| `copaw models local`                   | List downloaded local models                         |
-| `copaw models remove-local <model_id>` | Delete a downloaded local model                      |
-| `copaw models ollama-pull <model>`     | Download an Ollama model                             |
-| `copaw models ollama-list`             | List Ollama models                                   |
-| `copaw models ollama-remove <model>`   | Delete an Ollama model                               |
+| `novapaw models list`                    | Show all providers, API key status, and active model |
+| `novapaw models config`                  | Full interactive setup: API keys → active model      |
+| `novapaw models config-key [provider]`   | Configure a single provider's API key                |
+| `novapaw models set-llm`                 | Switch the active model (API keys unchanged)         |
+| `novapaw models download <repo_id>`      | Download a local model (llama.cpp / MLX)             |
+| `novapaw models local`                   | List downloaded local models                         |
+| `novapaw models remove-local <model_id>` | Delete a downloaded local model                      |
+| `novapaw models ollama-pull <model>`     | Download an Ollama model                             |
+| `novapaw models ollama-list`             | List Ollama models                                   |
+| `novapaw models ollama-remove <model>`   | Delete an Ollama model                               |
 
 ```bash
-copaw models list                    # See what's configured
-copaw models config                  # Full interactive setup
-copaw models config-key modelscope   # Just set ModelScope's API key
-copaw models config-key dashscope    # Just set DashScope's API key
-copaw models config-key custom       # Set custom provider (Base URL + key)
-copaw models set-llm                 # Change active model only
+novapaw models list                    # See what's configured
+novapaw models config                  # Full interactive setup
+novapaw models config-key modelscope   # Just set ModelScope's API key
+novapaw models config-key dashscope    # Just set DashScope's API key
+novapaw models config-key custom       # Set custom provider (Base URL + key)
+novapaw models set-llm                 # Change active model only
 ```
 
 #### Local models
 
-CoPaw can also run models locally via llama.cpp or MLX — no API key needed.
-Install the backend first: `pip install 'copaw[llamacpp]'` or
-`pip install 'copaw[mlx]'`.
+NovaPaw can also run models locally via llama.cpp or MLX — no API key needed.
+Install the backend first: `pip install 'novapaw[llamacpp]'` or
+`pip install 'novapaw[mlx]'`.
 
 ```bash
 # Download a model (auto-selects Q4_K_M GGUF)
-copaw models download Qwen/Qwen3-4B-GGUF
+novapaw models download Qwen/Qwen3-4B-GGUF
 
 # Download an MLX model
-copaw models download Qwen/Qwen3-4B --backend mlx
+novapaw models download Qwen/Qwen3-4B --backend mlx
 
 # Download from ModelScope
-copaw models download Qwen/Qwen2-0.5B-Instruct-GGUF --source modelscope
+novapaw models download Qwen/Qwen2-0.5B-Instruct-GGUF --source modelscope
 
 # List downloaded models
-copaw models local
-copaw models local --backend mlx
+novapaw models local
+novapaw models local --backend mlx
 
 # Delete a downloaded model
-copaw models remove-local <model_id>
-copaw models remove-local <model_id> --yes   # skip confirmation
+novapaw models remove-local <model_id>
+novapaw models remove-local <model_id> --yes   # skip confirmation
 ```
 
 | Option      | Short | Default       | Description                                                           |
@@ -156,54 +156,54 @@ copaw models remove-local <model_id> --yes   # skip confirmation
 
 #### Ollama models
 
-CoPaw integrates with Ollama to run models locally. Models are dynamically loaded from your Ollama daemon — install Ollama first from [ollama.com](https://ollama.com).
+NovaPaw integrates with Ollama to run models locally. Models are dynamically loaded from your Ollama daemon — install Ollama first from [ollama.com](https://ollama.com).
 
-Install the Ollama SDK: `pip install 'copaw[ollama]'` (or re-run the installer with `--extras ollama`)
+Install the Ollama SDK: `pip install 'novapaw[ollama]'` (or re-run the installer with `--extras ollama`)
 
 ```bash
 # Download an Ollama model
-copaw models ollama-pull mistral:7b
-copaw models ollama-pull qwen3:8b
+novapaw models ollama-pull mistral:7b
+novapaw models ollama-pull qwen3:8b
 
 # List Ollama models
-copaw models ollama-list
+novapaw models ollama-list
 
 # Remove an Ollama model
-copaw models ollama-remove mistral:7b
-copaw models ollama-remove qwen3:8b --yes   # skip confirmation
+novapaw models ollama-remove mistral:7b
+novapaw models ollama-remove qwen3:8b --yes   # skip confirmation
 
 # Use in config flow (auto-detects Ollama models)
-copaw models config           # Select Ollama → Choose from model list
-copaw models set-llm          # Switch to a different Ollama model
+novapaw models config           # Select Ollama → Choose from model list
+novapaw models set-llm          # Switch to a different Ollama model
 ```
 
 **Key differences from local models:**
 
-- Models come from Ollama daemon (not downloaded by CoPaw)
+- Models come from Ollama daemon (not downloaded by NovaPaw)
 - Use `ollama-pull` / `ollama-remove` instead of `download` / `remove-local`
-- Model list updates dynamically when you add/remove via Ollama CLI or CoPaw
+- Model list updates dynamically when you add/remove via Ollama CLI or NovaPaw
 
-> **Note:** You are responsible for ensuring the API key is valid. CoPaw does
+> **Note:** You are responsible for ensuring the API key is valid. NovaPaw does
 > not verify key correctness. See [Config — LLM Providers](./config#llm-providers).
 
-### copaw env
+### novapaw env
 
 Manage environment variables used by tools and skills at runtime.
 
 | Command                   | What it does                  |
 | ------------------------- | ----------------------------- |
-| `copaw env list`          | List all configured variables |
-| `copaw env set KEY VALUE` | Set or update a variable      |
-| `copaw env delete KEY`    | Delete a variable             |
+| `novapaw env list`          | List all configured variables |
+| `novapaw env set KEY VALUE` | Set or update a variable      |
+| `novapaw env delete KEY`    | Delete a variable             |
 
 ```bash
-copaw env list
-copaw env set TAVILY_API_KEY "tvly-xxxxxxxx"
-copaw env set GITHUB_TOKEN "ghp_xxxxxxxx"
-copaw env delete TAVILY_API_KEY
+novapaw env list
+novapaw env set TAVILY_API_KEY "tvly-xxxxxxxx"
+novapaw env set GITHUB_TOKEN "ghp_xxxxxxxx"
+novapaw env delete TAVILY_API_KEY
 ```
 
-> **Note:** CoPaw only stores and loads these values; you are responsible for
+> **Note:** NovaPaw only stores and loads these values; you are responsible for
 > ensuring they are correct. See
 > [Config — Environment Variables](./config#environment-variables).
 
@@ -211,9 +211,9 @@ copaw env delete TAVILY_API_KEY
 
 ## Channels
 
-Connect CoPaw to messaging platforms.
+Connect NovaPaw to messaging platforms.
 
-### copaw channels
+### novapaw channels
 
 Manage channel configuration (iMessage, Discord, DingTalk, Feishu, QQ,
 Console, etc.). **Note:** Use `config` for interactive setup (no `configure`
@@ -221,20 +221,20 @@ subcommand); use `remove` to uninstall custom channels (no `uninstall`).
 
 | Command                        | What it does                                                                                                      |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| `copaw channels list`          | Show all channels and their status (secrets masked)                                                               |
-| `copaw channels install <key>` | Install a channel into `custom_channels/`: create stub or use `--path`/`--url`                                    |
-| `copaw channels add <key>`     | Install and add to config; built-in channels only get config entry; supports `--path`/`--url`                     |
-| `copaw channels remove <key>`  | Remove a custom channel from `custom_channels/` (built-ins cannot be removed); `--keep-config` keeps config entry |
-| `copaw channels config`        | Interactively enable/disable channels and fill in credentials                                                     |
+| `novapaw channels list`          | Show all channels and their status (secrets masked)                                                               |
+| `novapaw channels install <key>` | Install a channel into `custom_channels/`: create stub or use `--path`/`--url`                                    |
+| `novapaw channels add <key>`     | Install and add to config; built-in channels only get config entry; supports `--path`/`--url`                     |
+| `novapaw channels remove <key>`  | Remove a custom channel from `custom_channels/` (built-ins cannot be removed); `--keep-config` keeps config entry |
+| `novapaw channels config`        | Interactively enable/disable channels and fill in credentials                                                     |
 
 ```bash
-copaw channels list                    # See current status
-copaw channels install my_channel      # Create custom channel stub
-copaw channels install my_channel --path ./my_channel.py
-copaw channels add dingtalk            # Add DingTalk to config
-copaw channels remove my_channel       # Remove custom channel (and from config by default)
-copaw channels remove my_channel --keep-config   # Remove module only, keep config entry
-copaw channels config                 # Interactive configuration
+novapaw channels list                    # See current status
+novapaw channels install my_channel      # Create custom channel stub
+novapaw channels install my_channel --path ./my_channel.py
+novapaw channels add dingtalk            # Add DingTalk to config
+novapaw channels remove my_channel       # Remove custom channel (and from config by default)
+novapaw channels remove my_channel --keep-config   # Remove module only, keep config entry
+novapaw channels config                 # Interactive configuration
 ```
 
 The interactive `config` flow lets you pick a channel, enable/disable it, and enter credentials. It loops until you choose "Save and exit".
@@ -255,20 +255,20 @@ The interactive `config` flow lets you pick a channel, enable/disable it, and en
 ## Cron (scheduled tasks)
 
 Create jobs that run on a timed schedule — "every day at 9am", "every 2 hours
-ask CoPaw and send the reply". **Requires `copaw app` to be running.**
+ask NovaPaw and send the reply". **Requires `novapaw app` to be running.**
 
-### copaw cron
+### novapaw cron
 
 | Command                      | What it does                                  |
 | ---------------------------- | --------------------------------------------- |
-| `copaw cron list`            | List all jobs                                 |
-| `copaw cron get <job_id>`    | Show a job's spec                             |
-| `copaw cron state <job_id>`  | Show runtime state (next run, last run, etc.) |
-| `copaw cron create ...`      | Create a job                                  |
-| `copaw cron delete <job_id>` | Delete a job                                  |
-| `copaw cron pause <job_id>`  | Pause a job                                   |
-| `copaw cron resume <job_id>` | Resume a paused job                           |
-| `copaw cron run <job_id>`    | Run once immediately                          |
+| `novapaw cron list`            | List all jobs                                 |
+| `novapaw cron get <job_id>`    | Show a job's spec                             |
+| `novapaw cron state <job_id>`  | Show runtime state (next run, last run, etc.) |
+| `novapaw cron create ...`      | Create a job                                  |
+| `novapaw cron delete <job_id>` | Delete a job                                  |
+| `novapaw cron pause <job_id>`  | Pause a job                                   |
+| `novapaw cron resume <job_id>` | Resume a paused job                           |
+| `novapaw cron run <job_id>`    | Run once immediately                          |
 
 ### Creating jobs
 
@@ -277,11 +277,11 @@ ask CoPaw and send the reply". **Requires `copaw app` to be running.**
 Two task types:
 
 - **text** — send a fixed message to a channel on schedule.
-- **agent** — ask CoPaw a question on schedule and deliver the reply.
+- **agent** — ask NovaPaw a question on schedule and deliver the reply.
 
 ```bash
 # Text: send "Good morning!" to DingTalk every day at 9:00
-copaw cron create \
+novapaw cron create \
   --type text \
   --name "Daily 9am" \
   --cron "0 9 * * *" \
@@ -290,8 +290,8 @@ copaw cron create \
   --target-session "session_id" \
   --text "Good morning!"
 
-# Agent: every 2 hours, ask CoPaw and forward the reply
-copaw cron create \
+# Agent: every 2 hours, ask NovaPaw and forward the reply
+novapaw cron create \
   --type agent \
   --name "Check todos" \
   --cron "0 */2 * * *" \
@@ -307,10 +307,10 @@ Required: `--type`, `--name`, `--cron`, `--channel`, `--target-user`,
 **Option 2 — JSON file (complex or batch)**
 
 ```bash
-copaw cron create -f job_spec.json
+novapaw cron create -f job_spec.json
 ```
 
-JSON structure matches the output of `copaw cron get <job_id>`.
+JSON structure matches the output of `novapaw cron get <job_id>`.
 
 ### Additional options
 
@@ -337,44 +337,44 @@ Five fields: **minute hour day month weekday** (no seconds).
 
 ## Chats (sessions)
 
-Manage chat sessions via the API. **Requires `copaw app` to be running.**
+Manage chat sessions via the API. **Requires `novapaw app` to be running.**
 
-### copaw chats
+### novapaw chats
 
 | Command                                | What it does                                                  |
 | -------------------------------------- | ------------------------------------------------------------- |
-| `copaw chats list`                     | List all sessions (supports `--user-id`, `--channel` filters) |
-| `copaw chats get <id>`                 | View a session's details and message history                  |
-| `copaw chats create ...`               | Create a new session                                          |
-| `copaw chats update <id> --name "..."` | Rename a session                                              |
-| `copaw chats delete <id>`              | Delete a session                                              |
+| `novapaw chats list`                     | List all sessions (supports `--user-id`, `--channel` filters) |
+| `novapaw chats get <id>`                 | View a session's details and message history                  |
+| `novapaw chats create ...`               | Create a new session                                          |
+| `novapaw chats update <id> --name "..."` | Rename a session                                              |
+| `novapaw chats delete <id>`              | Delete a session                                              |
 
 ```bash
-copaw chats list
-copaw chats list --user-id alice --channel dingtalk
-copaw chats get 823845fe-dd13-43c2-ab8b-d05870602fd8
-copaw chats create --session-id "discord:alice" --user-id alice --name "My Chat"
-copaw chats create -f chat.json
-copaw chats update <chat_id> --name "Renamed"
-copaw chats delete <chat_id>
+novapaw chats list
+novapaw chats list --user-id alice --channel dingtalk
+novapaw chats get 823845fe-dd13-43c2-ab8b-d05870602fd8
+novapaw chats create --session-id "discord:alice" --user-id alice --name "My Chat"
+novapaw chats create -f chat.json
+novapaw chats update <chat_id> --name "Renamed"
+novapaw chats delete <chat_id>
 ```
 
 ---
 
 ## Skills
 
-Extend CoPaw's capabilities with skills (PDF reading, web search, etc.).
+Extend NovaPaw's capabilities with skills (PDF reading, web search, etc.).
 
-### copaw skills
+### novapaw skills
 
 | Command               | What it does                                      |
 | --------------------- | ------------------------------------------------- |
-| `copaw skills list`   | Show all skills and their enabled/disabled status |
-| `copaw skills config` | Interactively enable/disable skills (checkbox UI) |
+| `novapaw skills list`   | Show all skills and their enabled/disabled status |
+| `novapaw skills config` | Interactively enable/disable skills (checkbox UI) |
 
 ```bash
-copaw skills list     # See what's available
-copaw skills config   # Toggle skills on/off interactively
+novapaw skills list     # See what's available
+novapaw skills config   # Toggle skills on/off interactively
 ```
 
 In the interactive UI: ↑/↓ to navigate, Space to toggle, Enter to confirm.
@@ -386,44 +386,44 @@ A preview of changes is shown before applying.
 
 ## Maintenance
 
-### copaw clean
+### novapaw clean
 
-Remove everything under the working directory (default `~/.copaw`).
+Remove everything under the working directory (default `~/.novapaw`).
 
 ```bash
-copaw clean             # Interactive confirmation
-copaw clean --yes       # No confirmation
-copaw clean --dry-run   # Only list what would be removed
+novapaw clean             # Interactive confirmation
+novapaw clean --yes       # No confirmation
+novapaw clean --dry-run   # Only list what would be removed
 ```
 
 ---
 
 ## Global options
 
-Every `copaw` subcommand inherits:
+Every `novapaw` subcommand inherits:
 
 | Option          | Default     | Description                                    |
 | --------------- | ----------- | ---------------------------------------------- |
-| `--host`        | `127.0.0.1` | API host (auto-detected from last `copaw app`) |
-| `--port`        | `8088`      | API port (auto-detected from last `copaw app`) |
+| `--host`        | `127.0.0.1` | API host (auto-detected from last `novapaw app`) |
+| `--port`        | `8088`      | API port (auto-detected from last `novapaw app`) |
 | `-h` / `--help` |             | Show help message                              |
 
 If the server runs on a non-default address, pass these globally:
 
 ```bash
-copaw --host 0.0.0.0 --port 9090 cron list
+novapaw --host 0.0.0.0 --port 9090 cron list
 ```
 
 ## Working directory
 
-All config and data live in `~/.copaw` by default: `config.json`,
+All config and data live in `~/.novapaw` by default: `config.json`,
 `HEARTBEAT.md`, `jobs.json`, `chats.json`, skills, memory, and agent persona
 files.
 
 | Variable            | Description                         |
 | ------------------- | ----------------------------------- |
-| `COPAW_WORKING_DIR` | Override the working directory path |
-| `COPAW_CONFIG_FILE` | Override the config file path       |
+| `NOVAPAW_WORKING_DIR` | Override the working directory path |
+| `NOVAPAW_CONFIG_FILE` | Override the config file path       |
 
 See [Config & Working Directory](./config) for full details.
 
@@ -433,21 +433,21 @@ See [Config & Working Directory](./config) for full details.
 
 | Command          | Subcommands                                                                                                                            | Requires server? |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- | :--------------: |
-| `copaw init`     | —                                                                                                                                      |        No        |
-| `copaw app`      | —                                                                                                                                      |  — (starts it)   |
-| `copaw models`   | `list` · `config` · `config-key` · `set-llm` · `download` · `local` · `remove-local` · `ollama-pull` · `ollama-list` · `ollama-remove` |        No        |
-| `copaw env`      | `list` · `set` · `delete`                                                                                                              |        No        |
-| `copaw channels` | `list` · `install` · `add` · `remove` · `config`                                                                                       |        No        |
-| `copaw cron`     | `list` · `get` · `state` · `create` · `delete` · `pause` · `resume` · `run`                                                            |     **Yes**      |
-| `copaw chats`    | `list` · `get` · `create` · `update` · `delete`                                                                                        |     **Yes**      |
-| `copaw skills`   | `list` · `config`                                                                                                                      |        No        |
-| `copaw clean`    | —                                                                                                                                      |        No        |
+| `novapaw init`     | —                                                                                                                                      |        No        |
+| `novapaw app`      | —                                                                                                                                      |  — (starts it)   |
+| `novapaw models`   | `list` · `config` · `config-key` · `set-llm` · `download` · `local` · `remove-local` · `ollama-pull` · `ollama-list` · `ollama-remove` |        No        |
+| `novapaw env`      | `list` · `set` · `delete`                                                                                                              |        No        |
+| `novapaw channels` | `list` · `install` · `add` · `remove` · `config`                                                                                       |        No        |
+| `novapaw cron`     | `list` · `get` · `state` · `create` · `delete` · `pause` · `resume` · `run`                                                            |     **Yes**      |
+| `novapaw chats`    | `list` · `get` · `create` · `update` · `delete`                                                                                        |     **Yes**      |
+| `novapaw skills`   | `list` · `config`                                                                                                                      |        No        |
+| `novapaw clean`    | —                                                                                                                                      |        No        |
 
 ---
 
 ## Related pages
 
-- [Introduction](./intro) — What CoPaw can do
+- [Introduction](./intro) — What NovaPaw can do
 - [Console](./console) — Web-based management UI
 - [Channels](./channels) — DingTalk, Feishu, iMessage, Discord, QQ setup
 - [Heartbeat](./heartbeat) — Scheduled check-in / digest

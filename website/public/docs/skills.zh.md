@@ -9,7 +9,7 @@
 
 > 若尚未了解「频道」「心跳」「定时任务」等概念，建议先阅读 [项目介绍](./intro)。
 
-应用从工作目录下的 `skills` 目录（默认 `~/.copaw/active_skills/`）加载能力：每个子目录中只要包含一份 `SKILL.md`，即会被识别为一个 Skill 并加载，无需额外注册。
+应用从工作目录下的 `skills` 目录（默认 `~/.novapaw/active_skills/`）加载能力：每个子目录中只要包含一份 `SKILL.md`，即会被识别为一个 Skill 并加载，无需额外注册。
 
 ---
 
@@ -19,7 +19,7 @@
 
 | Skill 名称                   | 说明                                                                                                                                        | 来源                                                           |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| **cron**                     | 定时任务管理。通过 `copaw cron` 或控制台 Cron Jobs 创建、查询、暂停、恢复、删除定时任务，按时间表执行并把结果发到频道。                     | 自建                                                           |
+| **cron**                     | 定时任务管理。通过 `novapaw cron` 或控制台 Cron Jobs 创建、查询、暂停、恢复、删除定时任务，按时间表执行并把结果发到频道。                     | 自建                                                           |
 | **file_reader**              | 读取与摘要文本类文件（如 .txt、.md、.json、.csv、.log、.py 等）。PDF 与 Office 由下方专用 Skill 处理。                                      | 自建                                                           |
 | **dingtalk_channel_connect** | 辅助完成钉钉频道接入流程：引导进入开发者后台、填写必要信息，帮助用户获取 `Client ID` 与 `Client Secret`，并提示用户完成必要的手动配置步骤。 | 自建                                                           |
 | **himalaya**                 | 通过 CLI 管理邮件（IMAP/SMTP）。使用 `himalaya` 列出、阅读、搜索、整理邮件，支持多账户与附件管理。                                          | https://github.com/openclaw/openclaw/tree/main/skills/himalaya |
@@ -48,13 +48,13 @@
 
 ## 内置 Skill：Cron（定时任务）
 
-首次运行时会从包里把 **Cron** 同步到 `~/.copaw/active_skills/cron/`。它提供「按时间表执行任务并把结果发到频道」的能力；具体任务的增删改查用 [CLI](./cli) 的 `copaw cron` 或控制台 **Control → Cron Jobs** 完成，不需要手写 cron 以外的配置。
+首次运行时会从包里把 **Cron** 同步到 `~/.novapaw/active_skills/cron/`。它提供「按时间表执行任务并把结果发到频道」的能力；具体任务的增删改查用 [CLI](./cli) 的 `novapaw cron` 或控制台 **Control → Cron Jobs** 完成，不需要手写 cron 以外的配置。
 
 常用操作：
 
-- 创建任务：`copaw cron create --type agent --name "xxx" --cron "0 9 * * *" ...`
-- 查看列表：`copaw cron list`
-- 查看状态：`copaw cron state <job_id>`
+- 创建任务：`novapaw cron create --type agent --name "xxx" --cron "0 9 * * *" ...`
+- 查看列表：`novapaw cron list`
+- 查看状态：`novapaw cron state <job_id>`
 
 ---
 
@@ -111,13 +111,13 @@
 
 ### 步骤
 
-1. 在 `~/.copaw/customized_skills/` 下新建一个目录，例如 `my_skill`。
+1. 在 `~/.novapaw/customized_skills/` 下新建一个目录，例如 `my_skill`。
 2. 在该目录下新建 `SKILL.md`。里面写 Markdown，给 Agent 看的能力说明、使用注意等；可选在文件开头用 YAML front matter 写 `name`、`description`、`metadata`，方便在 Agent 或控制台里展示。
 
 ### 目录结构示例
 
 ```
-~/.copaw/
+~/.novapaw/
   active_skills/        # 实际激活的 Skill（由内置与自定义合并同步）
     cron/
       SKILL.md
@@ -141,7 +141,7 @@ description: 我的自定义能力说明
 本 Skill 用于……
 ```
 
-应用启动时会将内置 Skill 与 `~/.copaw/customized_skills/` 中的自定义 Skill 合并同步到 `~/.copaw/active_skills/`，同名时自定义优先。你在 `customized_skills` 中新加的目录不会被覆盖；内置 Skill 只会在 `active_skills` 中缺失时复制一次，已存在则不会覆盖。
+应用启动时会将内置 Skill 与 `~/.novapaw/customized_skills/` 中的自定义 Skill 合并同步到 `~/.novapaw/active_skills/`，同名时自定义优先。你在 `customized_skills` 中新加的目录不会被覆盖；内置 Skill 只会在 `active_skills` 中缺失时复制一次，已存在则不会覆盖。
 
 ---
 

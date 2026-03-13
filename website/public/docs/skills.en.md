@@ -10,7 +10,7 @@ Two ways to manage skills:
 > If you're new to channels, heartbeat, or cron, read [Introduction](./intro) first.
 
 The app loads skills from the working directory `skills` folder (default
-`~/.copaw/active_skills/`): any subdirectory containing a `SKILL.md` is loaded as a
+`~/.novapaw/active_skills/`): any subdirectory containing a `SKILL.md` is loaded as a
 skill; no extra registration.
 
 ---
@@ -22,7 +22,7 @@ when needed; you can enable or disable them in the Console or via config.
 
 | Skill                        | Description                                                                                                                                                                 | Source                                                         |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| **cron**                     | Scheduled jobs. Create, list, pause, resume, or delete jobs via `copaw cron` or Console **Control → Cron Jobs**; run on a schedule and send results to a channel.           | Built-in                                                       |
+| **cron**                     | Scheduled jobs. Create, list, pause, resume, or delete jobs via `novapaw cron` or Console **Control → Cron Jobs**; run on a schedule and send results to a channel.           | Built-in                                                       |
 | **file_reader**              | Read and summarize text-based files (.txt, .md, .json, .csv, .log, .py, etc.). PDF and Office are handled by the skills below.                                              | Built-in                                                       |
 | **dingtalk_channel_connect** | Helps with DingTalk channel onboarding: guides you through the developer console, key fields, credential lookup (`Client ID` / `Client Secret`), and required manual steps. | Built-in                                                       |
 | **himalaya**                 | Manage emails via CLI (IMAP/SMTP). Use `himalaya` to list, read, search, and organize emails from the terminal; supports multiple accounts and attachments.                 | https://github.com/openclaw/openclaw/tree/main/skills/himalaya |
@@ -51,15 +51,15 @@ Changes are synced to the working directory and affect the agent. Handy if you p
 ## Built-in skill: Cron (scheduled tasks)
 
 On first run the **Cron** skill is synced from the package to
-`~/.copaw/active_skills/cron/`. It provides “run on a schedule and send results to a
-channel.” You manage jobs with the [CLI](./cli) (`copaw cron`) or in the
+`~/.novapaw/active_skills/cron/`. It provides “run on a schedule and send results to a
+channel.” You manage jobs with the [CLI](./cli) (`novapaw cron`) or in the
 Console under **Control → Cron Jobs**; no need to edit skill files.
 
 Common operations:
 
-- Create a job: `copaw cron create --type agent --name "xxx" --cron "0 9 * * *" ...`
-- List jobs: `copaw cron list`
-- Check state: `copaw cron state <job_id>`
+- Create a job: `novapaw cron create --type agent --name "xxx" --cron "0 9 * * *" ...`
+- List jobs: `novapaw cron list`
+- Check state: `novapaw cron state <job_id>`
 
 ---
 
@@ -118,13 +118,13 @@ To add your own instructions or capabilities via the file system, add a custom s
 
 ### Steps
 
-1. Create a directory under `~/.copaw/customized_skills/`, e.g. `my_skill`.
+1. Create a directory under `~/.novapaw/customized_skills/`, e.g. `my_skill`.
 2. Add a `SKILL.md` file in that directory. Write Markdown that describes the capability for the agent. You can optionally use YAML front matter at the top for `name`, `description`, and `metadata` (for the agent or Console).
 
 ### Directory layout example
 
 ```
-~/.copaw/
+~/.novapaw/
   active_skills/        # Activated skills (merged from built-in + custom)
     cron/
       SKILL.md
@@ -148,7 +148,7 @@ description: My custom capability
 This skill is used for…
 ```
 
-On startup the app merges built-in skills with custom skills from `~/.copaw/customized_skills/` into `~/.copaw/active_skills/`; custom skills take priority when names collide. Your custom directories are never overwritten; built-in skills are only copied to `active_skills` when missing.
+On startup the app merges built-in skills with custom skills from `~/.novapaw/customized_skills/` into `~/.novapaw/active_skills/`; custom skills take priority when names collide. Your custom directories are never overwritten; built-in skills are only copied to `active_skills` when missing.
 
 ---
 
