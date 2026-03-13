@@ -420,7 +420,7 @@ Ask NovaPaw directly, e.g. "How many tokens have I used recently?" or "Show me t
 
 | Page                  | Sidebar path                     | What you can do                                                |
 | --------------------- | -------------------------------- | -------------------------------------------------------------- |
-| Chat                  | Chat → Chat                      | Talk with NovaPaw, manage sessions                               |
+| Chat                  | Chat → Chat                      | Talk with NovaPaw, manage sessions                             |
 | Channels              | Control → Channels               | Enable/disable channels, configure credentials                 |
 | Sessions              | Control → Sessions               | Filter, rename, delete sessions                                |
 | Cron Jobs             | Control → Cron Jobs              | Create/edit/delete jobs, run immediately                       |
