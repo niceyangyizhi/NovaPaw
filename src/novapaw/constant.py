@@ -182,7 +182,10 @@ LLM_BACKOFF_CAP = EnvVarLoader.get_float(
 try:
     TOOL_GUARD_APPROVAL_TIMEOUT_SECONDS = max(
         float(
-            os.environ.get("NOVAPAW_TOOL_GUARD_APPROVAL_TIMEOUT_SECONDS", "600"),
+            os.environ.get(
+                "NOVAPAW_TOOL_GUARD_APPROVAL_TIMEOUT_SECONDS",
+                "600",
+            ),
         ),
         1.0,
     )

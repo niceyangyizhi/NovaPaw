@@ -22,7 +22,8 @@ const MODELSCOPE_URL =
 const ALIYUN_ECS_URL =
   "https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&ServiceId=service-1ed84201799f40879884";
 const ALIYUN_DOC_URL = "https://developer.aliyun.com/article/1713682";
-const DESKTOP_RELEASES_URL = "https://github.com/agentscope-ai/NovaPaw/releases";
+const DESKTOP_RELEASES_URL =
+  "https://github.com/agentscope-ai/NovaPaw/releases";
 
 const COMMANDS = {
   pip: ["pip install novapaw", "novapaw init --defaults", "novapaw app"],

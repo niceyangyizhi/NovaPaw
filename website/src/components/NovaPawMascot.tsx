@@ -8,6 +8,9 @@ interface NovaPawMascotProps {
   className?: string;
 }
 
-export function NovaPawMascot({ size = 80, className = "" }: NovaPawMascotProps) {
+export function NovaPawMascot({
+  size = 80,
+  className = "",
+}: NovaPawMascotProps) {
   return <CatPawIcon size={size} className={className} />;
 }

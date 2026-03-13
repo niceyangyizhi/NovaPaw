@@ -101,7 +101,7 @@ class SuppressPathAccessLogFilter(logging.Filter):
 
 
 def setup_logger(level: int | str = logging.INFO):
-    """Configure logging to only output from this package (novapaw), not deps."""
+    """Configure logging for this package (novapaw), not deps."""
     log_format = "%(asctime)s | %(message)s"
     datefmt = "%Y-%m-%d %H:%M:%S"
 
