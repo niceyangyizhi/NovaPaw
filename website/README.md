@@ -83,11 +83,11 @@ Default port: **8088**. Override with `PORT=3000 pm2 start ecosystem.config.cjs`
 | Command                                        | Description                               |
 | ---------------------------------------------- | ----------------------------------------- |
 | `pm2 status`                                   | List apps and status                      |
-| `pm2 logs novapaw-website`                       | Stream stdout/stderr logs                 |
-| `pm2 restart novapaw-website`                    | Restart the app                           |
+| `pm2 logs novapaw-website`                     | Stream stdout/stderr logs                 |
+| `pm2 restart novapaw-website`                  | Restart the app                           |
 | `pm2 reload ecosystem.config.cjs --update-env` | Reload with latest config (zero-downtime) |
-| `pm2 stop novapaw-website`                       | Stop the app                              |
-| `pm2 delete novapaw-website`                     | Remove from PM2 (stop + delete)           |
+| `pm2 stop novapaw-website`                     | Stop the app                              |
+| `pm2 delete novapaw-website`                   | Remove from PM2 (stop + delete)           |
 
 ### 4. After code/build changes
 
