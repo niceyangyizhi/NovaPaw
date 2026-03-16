@@ -120,11 +120,11 @@ novapaw app
 ### 开源地址
 
 NovaPaw 已开源，官方仓库地址：
-`https://github.com/agentscope-ai/NovaPaw`
+`https://github.com/niceyangyizhi/NovaPaw`
 
 ### 最新版本升级内容如何查看
 
-具体版本变更可在 NovaPaw GitHub 仓库 [Releases](https://github.com/agentscope-ai/NovaPaw/releases) 中查看。
+具体版本变更可在 NovaPaw GitHub 仓库 [Releases](https://github.com/niceyangyizhi/NovaPaw/releases) 中查看。
 
 ### 如何配置模型
 
@@ -204,7 +204,7 @@ https://help.aliyun.com/zh/model-studio/coding-plan-quickstart#2531c37fd64f9
 
 ### 报错如何获取修复帮助
 
-为了加快修复与排查，共建良好社区生态，建议遇到报错时，首选在 NovaPaw 的 GitHub 仓库中提 [issue](https://github.com/agentscope-ai/NovaPaw/issues)，请附上完整报错信息，并上传错误详情文件。
+为了加快修复与排查，共建良好社区生态，建议遇到报错时，首选在 NovaPaw 的 GitHub 仓库中提 [issue](https://github.com/niceyangyizhi/NovaPaw/issues)，请附上完整报错信息，并上传错误详情文件。
 
 控制台报错里通常会给出错误文件路径，例如在以下报错中：
 

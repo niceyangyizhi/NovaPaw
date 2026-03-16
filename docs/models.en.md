@@ -116,7 +116,7 @@ The Ollama provider uses the **Ollama daemon** installed on your machine. Models
 >
 > ![delete](https://img.alicdn.com/imgextra/i1/O1CN01OvNNu21shXVzD14go_!!6000000005798-2-tps-3802-1968.png)
 >
-> **Docker users:** If NovaPaw runs inside a Docker container, `localhost` refers to the container — not your host machine. Change the Ollama Base URL to `http://host.docker.internal:11434` (and add `--add-host=host.docker.internal:host-gateway` to your `docker run` command). See the [Docker section in the README](https://github.com/agentscope-ai/NovaPaw#using-docker) for details.
+> **Docker users:** If NovaPaw runs inside a Docker container, `localhost` refers to the container — not your host machine. Change the Ollama Base URL to `http://host.docker.internal:11434` (and add `--add-host=host.docker.internal:host-gateway` to your `docker run` command). See the [Docker section in the README](https://github.com/niceyangyizhi/NovaPaw#using-docker) for details.
 
 ## LM Studio provider
 
@@ -139,7 +139,7 @@ The LM Studio provider connects to the **LM Studio** desktop application's built
 >
 > **Important — Context Length:** LM Studio loads models with a small default context length (often 2048 or 4096 tokens). NovaPaw's system prompt (AGENTS.md + SOUL.md + PROFILE.md) can easily exceed this limit, causing an error like _"The number of tokens to keep from the initial prompt is greater than the context length"_. To fix this, **unload the model in LM Studio and reload it with a larger context length** (16384 or above is recommended). You can do this in the LM Studio GUI (Model Settings → Context Length) or via the CLI: `lms unload --all && lms load <model> -c 16384`.
 >
-> **Docker users:** If NovaPaw runs inside a Docker container, `localhost` refers to the container — not your host machine. Change the LM Studio Base URL to `http://host.docker.internal:1234/v1` (and add `--add-host=host.docker.internal:host-gateway` to your `docker run` command). See the [Docker section in the README](https://github.com/agentscope-ai/NovaPaw#using-docker) for details.
+> **Docker users:** If NovaPaw runs inside a Docker container, `localhost` refers to the container — not your host machine. Change the LM Studio Base URL to `http://host.docker.internal:1234/v1` (and add `--add-host=host.docker.internal:host-gateway` to your `docker run` command). See the [Docker section in the README](https://github.com/niceyangyizhi/NovaPaw#using-docker) for details.
 
 ## Add custom provider
 
