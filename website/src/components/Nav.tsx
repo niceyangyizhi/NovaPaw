@@ -51,7 +51,7 @@ export function Nav({
   lang,
   onLangClick,
   docsPath,
-  repoUrl: _repoUrl,
+  repoUrl,
 }: NavProps) {
   const [open, setOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -200,7 +200,7 @@ export function Nav({
             <span>{t(lang, "nav.lang")}</span>
           </button>
           <a
-            href="https://github.com/agentscope-ai/NovaPaw"
+            href={repoUrl}
             target="_blank"
             rel="noopener noreferrer"
             className={linkClass}
@@ -294,7 +294,7 @@ export function Nav({
           <Globe size={18} /> {t(lang, "nav.lang")}
         </button>
         <a
-          href="https://github.com/agentscope-ai/NovaPaw"
+          href={repoUrl}
           target="_blank"
           rel="noopener noreferrer"
           className={linkClass}

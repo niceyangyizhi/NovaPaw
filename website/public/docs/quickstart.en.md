@@ -166,7 +166,7 @@ If you're not comfortable with command-line tools, you can download and use Nova
 ### Download and Usage
 
 1. **Download the installer**
-   Go to [GitHub Releases](https://github.com/agentscope-ai/NovaPaw/releases) to download the version for your system:
+   Go to [GitHub Releases](https://github.com/niceyangyizhi/NovaPaw/releases) to download the version for your system:
 
    - Windows: `NovaPaw-Setup-<version>.exe`
    - macOS: `NovaPaw-<version>-macOS.zip`

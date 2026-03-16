@@ -160,7 +160,7 @@ pip install novapaw
 ### 下载与使用
 
 1. **下载安装包**
-   前往 [GitHub Releases](https://github.com/agentscope-ai/NovaPaw/releases) 下载对应系统的版本：
+   前往 [GitHub Releases](https://github.com/niceyangyizhi/NovaPaw/releases) 下载对应系统的版本：
 
    - Windows: `NovaPaw-Setup-<version>.exe`
    - macOS: `NovaPaw-<version>-macOS.zip`

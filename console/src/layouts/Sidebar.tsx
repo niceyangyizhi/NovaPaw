@@ -425,7 +425,7 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
             type="primary"
             onClick={() =>
               window.open(
-                "https://github.com/agentscope-ai/NovaPaw/releases",
+                "https://github.com/niceyangyizhi/NovaPaw/releases",
                 "_blank",
               )
             }

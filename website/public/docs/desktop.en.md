@@ -14,7 +14,7 @@
 
 This guide explains how to install and use the NovaPaw Desktop application on Windows and macOS.
 
-[releases]: https://github.com/agentscope-ai/NovaPaw/releases
+[releases]: https://github.com/niceyangyizhi/NovaPaw/releases
 
 ## Important Notice
 
@@ -227,7 +227,7 @@ Currently using:
 
 ## Technical Support
 
-- **GitHub Issues**: [Submit an issue](https://github.com/agentscope-ai/NovaPaw/issues)
+- **GitHub Issues**: [Submit an issue](https://github.com/niceyangyizhi/NovaPaw/issues)
 - **Packaging documentation**: `scripts/pack/README.md` - Technical details and local build guide
 - **Log locations**:
   - Windows: View in Debug mode terminal, or `%USERPROFILE%\.novapaw\` directory

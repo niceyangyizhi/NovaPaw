@@ -1,5 +1,4 @@
 # Deploy website to GitHub Pages (see scripts/website_build.sh).
-# Custom domain: novapaw.agentscope.io (CNAME).
 name: Deploy website to GitHub Pages
 
 on:
@@ -46,12 +45,10 @@ jobs:
       - name: Build
         working-directory: website
         env:
-          VITE_BASE_PATH: "/"
+          VITE_BASE_PATH: "/${{ github.event.repository.name }}/"
         run: pnpm run build
 
-      # Copy installation scripts so they are served from the website
-      # (e.g. novapaw.agentscope.io/install.sh) instead of raw.githubusercontent.com,
-      # which may be blocked by some firewalls.
+      # Copy installation scripts so they are served from the website.
       - name: Copy installation scripts to dist
         run: cp scripts/install.sh scripts/install.ps1 scripts/install.bat website/dist/
 
@@ -64,4 +61,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: website/dist
-          cname: novapaw.agentscope.io
