@@ -43,6 +43,7 @@ import styles from "./index.module.less";
 const { Sider } = Layout;
 
 const PYPI_URL = "https://pypi.org/pypi/novapaw/json";
+const WEBSITE_URL = "https://niceyangyizhi.github.io/NovaPaw";
 
 const DEFAULT_OPEN_KEYS = [
   "chat-group",
@@ -258,7 +259,7 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
       ? "ru"
       : "en";
     const faqLang = lang === "zh" ? "zh" : "en";
-    const url = `https://novapaw.agentscope.io/docs/faq.${faqLang}.md`;
+    const url = `${WEBSITE_URL}/docs/faq.${faqLang}.md`;
     fetch(url, { cache: "no-cache" })
       .then((res) => (res.ok ? res.text() : Promise.reject()))
       .then((text) => {
@@ -367,7 +368,7 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
       <div className={styles.siderTop}>
         {!collapsed && (
           <div className={styles.logoWrapper}>
-            <img src="/logo.png" alt="NovaPaw" className={styles.logoImg} />
+            <img src="/logo.svg" alt="NovaPaw" className={styles.logoImg} />
             {version && (
               <Badge dot={!!hasUpdate} color="red" offset={[4, 18]}>
                 <span

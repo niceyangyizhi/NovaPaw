@@ -527,7 +527,8 @@ app.include_router(
 # POST /voice/incoming, WS /voice/ws, POST /voice/status-callback
 app.include_router(voice_router, tags=["voice"])
 
-# Mount console: root static files (logo.png etc.) then assets, then SPA
+# Mount console: root static files (logo.png, logo.svg, etc.) then assets,
+# then SPA fallback.
 # fallback.
 if os.path.isdir(_CONSOLE_STATIC_DIR):
     _console_path = Path(_CONSOLE_STATIC_DIR)
@@ -537,6 +538,14 @@ if os.path.isdir(_CONSOLE_STATIC_DIR):
         f = _console_path / "logo.png"
         if f.is_file():
             return FileResponse(f, media_type="image/png")
+
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    @app.get("/logo.svg")
+    def _console_logo_svg():
+        f = _console_path / "logo.svg"
+        if f.is_file():
+            return FileResponse(f, media_type="image/svg+xml")
 
         raise HTTPException(status_code=404, detail="Not Found")
 

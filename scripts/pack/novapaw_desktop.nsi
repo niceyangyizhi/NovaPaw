@@ -9,7 +9,7 @@
 !define MUI_UNICON "${UNPACKED}\icon.ico"
 
 !ifndef NOVAPAW_VERSION
-  !define NOVAPAW_VERSION "0.0.0"
+  !define NOVAPAW_VERSION "0.0.1"
 !endif
 !ifndef OUTPUT_EXE
   !define OUTPUT_EXE "dist\NovaPaw-Setup-${NOVAPAW_VERSION}.exe"

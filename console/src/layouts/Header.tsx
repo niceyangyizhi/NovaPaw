@@ -12,10 +12,12 @@ import styles from "./index.module.less";
 
 const { Header: AntHeader } = Layout;
 
+const WEBSITE_URL = "https://niceyangyizhi.github.io/NovaPaw";
+
 // Navigation URLs
 const NAV_URLS = {
-  docs: "https://novapaw.agentscope.io/docs/intro",
-  faq: "https://novapaw.agentscope.io/docs/faq",
+  docs: `${WEBSITE_URL}/docs/intro`,
+  faq: `${WEBSITE_URL}/docs/faq`,
   changelog: "https://github.com/niceyangyizhi/NovaPaw/releases",
   github: "https://github.com/niceyangyizhi/NovaPaw",
 } as const;
