@@ -7,6 +7,7 @@ import { Modal, Button, Result, GetProp, Upload, Image } from "antd";
 import { ExclamationCircleOutlined, SettingOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
+import "./index.module.less";
 import sessionApi from "./sessionApi";
 import defaultConfig, { getDefaultConfig } from "./OptionsPanel/defaultConfig";
 import Weather from "./Weather";
@@ -55,6 +56,44 @@ export default function ChatPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   // Store original full-resolution images as array (most recent first)
   const originalImagesRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    const styleId = "novapaw-input-attachment-preview-style";
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = styleId;
+      styleEl.textContent = `
+        [class*="attachment-list-card-type-preview"] {
+          position: relative;
+          display: block;
+          border-radius: 8px;
+        }
+
+        [class*="attachment-list-card-type-preview"] img {
+          border-radius: 8px;
+          cursor: pointer;
+        }
+
+        [class*="attachment-list-card-hoverable"][class*="attachment-list-card-type-preview"]:hover::after {
+          background:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z'/%3E%3C/svg%3E")
+              center / 24px 24px no-repeat,
+            rgba(0, 0, 0, 0.45) !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-size: 24px 24px !important;
+          opacity: 1 !important;
+        }
+      `;
+      document.head.appendChild(styleEl);
+    }
+
+    return () => {
+      styleEl?.remove();
+    };
+  }, []);
 
   // Handle clipboard paste for images
   useEffect(() => {
