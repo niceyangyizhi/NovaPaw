@@ -68,22 +68,25 @@ def _echo_security_warning_box() -> None:
 
 DEFAULT_HEARTBEAT_MDS = {
     "zh": """# Heartbeat checklist
-- 扫描收件箱紧急邮件
-- 查看未来 2h 的日历
-- 检查待办是否卡住
-- 若安静超过 8h，轻量 check-in
+- 回顾最近 1-3 个会话：提炼用户当前目标、未完成事项、反复出现的问题。
+- 结合 MEMORY.md：沉淀稳定偏好、长期约束、已确认决策；去重并修正过期信息。
+- 对可推进事项主动执行一小步（如：补草稿、列计划、准备可直接执行的命令/变更）。
+- 若存在阻塞，提出 1-2 个最小澄清问题，并附可选下一步。
+- 若无可行动作，明确回复“无更新”，不要重复旧内容。
 """,
     "en": """# Heartbeat checklist
-- Scan inbox for urgent email
-- Check calendar for next 2h
-- Check tasks for blockers
-- Light check-in if quiet for 8h
+- Review the latest 1-3 sessions: extract current goals, unfinished items, and repeated pain points.
+- Update MEMORY.md with stable preferences, long-term constraints, and confirmed decisions; deduplicate and remove stale entries.
+- Proactively take one small next step for actionable work (draft, plan, or ready-to-run command/change).
+- If blocked, ask 1-2 minimal clarification questions and provide possible next steps.
+- If there is nothing actionable, reply with \"No updates\" and avoid repeating old content.
 """,
     "ru": """# Heartbeat checklist
-- Проверить входящие на срочные письма
-- Просмотреть календарь на ближайшие 2 часа
-- Проверить задачи на наличие блокировок
-- Лёгкая проверка при отсутствии активности более 8 часов
+- Просмотреть последние 1-3 сессии: выделить текущие цели, незавершённые задачи и повторяющиеся проблемы.
+- Обновить MEMORY.md: зафиксировать устойчивые предпочтения, долгосрочные ограничения и подтверждённые решения; удалить дубли и устаревшее.
+- Проактивно сделать один небольшой следующий шаг по задачам (черновик, план или готовая к запуску команда/изменение).
+- Если есть блокеры, задать 1-2 минимальных уточняющих вопроса и предложить варианты следующих шагов.
+- Если нет действий, явно ответить \"No updates\" и не повторять старый контент.
 """,
 }
 
