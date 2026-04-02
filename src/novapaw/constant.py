@@ -94,6 +94,7 @@ HEARTBEAT_FILE = EnvVarLoader.get_str("NOVAPAW_HEARTBEAT_FILE", "HEARTBEAT.md")
 HEARTBEAT_DEFAULT_EVERY = "6h"
 HEARTBEAT_DEFAULT_TARGET = "main"
 HEARTBEAT_TARGET_LAST = "last"
+HEARTBEAT_TARGET_AUTO = "auto"
 
 # Env key for app log level (used by CLI and app load for reload child).
 LOG_LEVEL_ENV = "NOVAPAW_LOG_LEVEL"

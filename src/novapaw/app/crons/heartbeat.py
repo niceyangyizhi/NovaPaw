@@ -17,7 +17,12 @@ from ...config import (
     get_heartbeat_query_path,
     load_config,
 )
-from ...constant import HEARTBEAT_TARGET_LAST
+from ...constant import (
+    HEARTBEAT_DEFAULT_TARGET,
+    HEARTBEAT_TARGET_LAST,
+    HEARTBEAT_TARGET_AUTO,
+)
+from .heartbeat_tools import create_send_to_channel_tool
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +78,45 @@ def _in_active_hours(active_hours: Any) -> bool:
     return now >= start_t or now <= end_t
 
 
+def build_heartbeat_auto_system_prompt(language: str = "zh") -> str:
+    """Build heartbeat auto-mode system prompt based on configured language."""
+    if language == "zh":
+        return """你是心跳助手，定期检查用户状态并主动提供帮助。
+
+你有 send_to_channel 工具可以发送消息给用户。
+
+请在以下情况调用 send_to_channel：
+✅ 有行动项、待办、任务需要提醒用户
+✅ 有重要提醒或建议值得用户注意
+✅ 有用户等待的信息或新发现
+✅ 有具体的下一步建议
+
+不要在以下情况调用：
+❌ 纯确认性回复（如"好的"、"收到了"、"无更新"）
+❌ 没有实质内容的回复
+❌ 重复之前的内容
+
+如果不确定是否有价值，宁可不发送。"""
+
+    return """You are a heartbeat assistant that periodically checks the user's
+state and proactively offers help.
+
+You have a send_to_channel tool that can send messages to the user.
+
+Use send_to_channel when:
+- There are concrete action items, tasks, or reminders for the user
+- There are important reminders or suggestions worth notifying
+- There is new information the user is waiting for
+- There is a specific next-step recommendation
+
+Do not use send_to_channel when:
+- The response is only a confirmation (for example: "ok", "received", "no update")
+- The response has no substantive content
+- The response only repeats previous content
+
+If you are not sure the message is valuable enough, prefer not to send it."""
+
+
 async def run_heartbeat_once(
     *,
     runner: Any,
@@ -80,7 +124,14 @@ async def run_heartbeat_once(
 ) -> None:
     """
     Run one heartbeat: read HEARTBEAT.md via config path, run agent,
-    optionally dispatch to last channel (target=last).
+    optionally dispatch to last channel (target=last or target=auto).
+
+    - target="last": Always send response to last_dispatch channel
+    - target="auto": Register send_to_channel tool temporarily, let LLM decide
+    - target="main": Run agent only, no dispatch
+
+    Note: For target="auto", the tool is registered before running and removed
+    after completion to avoid polluting the shared runner's toolkit.
     """
     config = load_config()
     hb = get_heartbeat_config()
@@ -98,7 +149,27 @@ async def run_heartbeat_once(
         logger.debug("heartbeat skipped: empty query file")
         return
 
-    # Build request: single user message with query text
+    target = (hb.target or "").strip().lower()
+    is_auto = target == HEARTBEAT_TARGET_AUTO
+
+    # Check last_dispatch availability for auto mode
+    has_last_dispatch = (
+        getattr(config, 'last_dispatch', None) is not None and
+        getattr(config.last_dispatch, 'channel', None) is not None and
+        (getattr(config.last_dispatch, 'user_id', None) or
+         getattr(config.last_dispatch, 'session_id', None))
+    )
+
+    # Auto mode fallback: if no last_dispatch, degrade to main mode
+    if is_auto and not has_last_dispatch:
+        logger.info(
+            "heartbeat: target=auto but no last_dispatch available, "
+            "degrading to target=main"
+        )
+        target = HEARTBEAT_DEFAULT_TARGET  # Degrade to main mode
+        is_auto = False
+
+    # Build request
     req: Dict[str, Any] = {
         "input": [
             {
@@ -110,12 +181,37 @@ async def run_heartbeat_once(
         "user_id": "main",
     }
 
-    target = (hb.target or "").strip().lower()
-    if target == HEARTBEAT_TARGET_LAST and config.last_dispatch:
-        ld = config.last_dispatch
-        if ld.channel and (ld.user_id or ld.session_id):
+    # target="auto": Register send_to_channel tool temporarily
+    if is_auto:
+        # Register tool with bound context (override if exists)
+        send_tool = create_send_to_channel_tool(channel_manager, config)
+        runner.toolkit.register_tool_function(
+            send_tool,
+            namesake_strategy="override",
+        )
 
-            async def _run_and_dispatch() -> None:
+        # Add system prompt to guide LLM on when to use the tool
+        req["input"].insert(0, {
+            "role": "system",
+            "content": [{
+                "type": "text",
+                "text": build_heartbeat_auto_system_prompt(
+                    getattr(config.agents, "language", "zh")
+                ),
+            }],
+        })
+
+        logger.debug("heartbeat: registered send_to_channel tool (target=auto)")
+
+    # target="last": Will dispatch all events to last channel
+    # target="auto": Tool call will handle dispatch
+    # target="main": No dispatch
+
+    async def _run() -> None:
+        if target == HEARTBEAT_TARGET_LAST and config.last_dispatch:
+            ld = config.last_dispatch
+            if ld.channel and (ld.user_id or ld.session_id):
+                # Dispatch all events to last channel
                 async for event in runner.stream_query(req):
                     await channel_manager.send_event(
                         channel=ld.channel,
@@ -124,19 +220,44 @@ async def run_heartbeat_once(
                         event=event,
                         meta={},
                     )
+                logger.info("heartbeat dispatched to last channel (target=last)")
+            else:
+                # No last_dispatch available, run without dispatch
+                async for _ in runner.stream_query(req):
+                    pass
+                logger.debug("heartbeat completed (target=last, no last_dispatch)")
+        else:
+            # For target="auto" or target="main": Just run agent
+            # For "auto", LLM may call send_to_channel tool which handles dispatch
+            async for _ in runner.stream_query(req):
+                pass
 
-            try:
-                await asyncio.wait_for(_run_and_dispatch(), timeout=120)
-            except asyncio.TimeoutError:
-                logger.warning("heartbeat run timed out")
-            return
-
-    # target main or no last_dispatch: run agent only, no dispatch
-    async def _run_only() -> None:
-        async for _ in runner.stream_query(req):
-            pass
+            if is_auto:
+                send_state = getattr(send_tool, "_heartbeat_state", {})
+                if send_state.get("called"):
+                    logger.info(
+                        "heartbeat completed (target=auto, dispatched=%s)",
+                        send_state.get("sent", False),
+                    )
+                else:
+                    logger.info(
+                        "heartbeat completed (target=auto, no dispatch attempted)"
+                    )
+            else:
+                logger.debug("heartbeat completed (target=main, no dispatch)")
 
     try:
-        await asyncio.wait_for(_run_only(), timeout=120)
+        await asyncio.wait_for(_run(), timeout=120)
     except asyncio.TimeoutError:
         logger.warning("heartbeat run timed out")
+    except Exception:
+        logger.exception("heartbeat run failed")
+        raise
+    finally:
+        # Always clean up: remove the temporary tool if registered
+        if is_auto:
+            try:
+                runner.toolkit.remove_tool_function("send_to_channel")
+                logger.debug("heartbeat: removed send_to_channel tool")
+            except Exception as e:
+                logger.warning("heartbeat: failed to remove send_to_channel tool: %s", e)
