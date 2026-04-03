@@ -161,7 +161,6 @@ async def test_auto_mode_fallback_no_last_dispatch(caplog) -> None:
 
     # Create mock runner and channel_manager
     mock_runner = MagicMock()
-    mock_runner.toolkit = MagicMock()
     mock_runner.stream_query = MagicMock(side_effect=lambda _req: _empty_stream())
 
     mock_channel_manager = MagicMock()
@@ -181,21 +180,19 @@ async def test_auto_mode_fallback_no_last_dispatch(caplog) -> None:
                     channel_manager=mock_channel_manager,
                 )
 
-                # Verify tool was NOT registered (degraded to main)
-                mock_runner.toolkit.register_tool_function.assert_not_called()
-
                 # Verify log message mentions degradation
                 assert any(
                     "degrading to target=main" in record.message
                     for record in caplog.records
                 )
 
-                # Verify system prompt was NOT added (check input doesn't have system message)
-                # This is implicit since tool wasn't registered
+                called_req = mock_runner.stream_query.call_args.args[0]
+                assert "extra_tool_functions" not in called_req
+                assert "extra_system_prompt" not in called_req
 
 
 async def test_auto_mode_with_last_dispatch_registers_tool() -> None:
-    """Test that auto mode registers tool when last_dispatch exists."""
+    """Test that auto mode passes one-shot tool/prompt overrides."""
     from novapaw.app.crons.heartbeat import run_heartbeat_once
     from novapaw.config.config import Config, HeartbeatConfig, LastDispatchConfig
     from unittest.mock import MagicMock, patch
@@ -217,7 +214,6 @@ async def test_auto_mode_with_last_dispatch_registers_tool() -> None:
 
     # Create mock runner
     mock_runner = MagicMock()
-    mock_runner.toolkit = MagicMock()
     mock_runner.stream_query = MagicMock(side_effect=lambda _req: _empty_stream())
 
     mock_channel_manager = MagicMock()
@@ -237,15 +233,17 @@ async def test_auto_mode_with_last_dispatch_registers_tool() -> None:
                     channel_manager=mock_channel_manager,
                 )
 
-                # Verify tool WAS registered
-                mock_runner.toolkit.register_tool_function.assert_called_once()
-                mock_runner.toolkit.remove_tool_function.assert_called_once_with(
-                    "send_to_channel"
-                )
+                # Verify request carries one-shot overrides for the agent layer
+                called_req = mock_runner.stream_query.call_args.args[0]
+                assert "extra_tool_functions" in called_req
+                assert len(called_req["extra_tool_functions"]) == 1
+                assert callable(called_req["extra_tool_functions"][0])
+                assert "extra_system_prompt" in called_req
+                assert "send_to_channel" in called_req["extra_system_prompt"]
 
 
-async def test_auto_mode_removes_tool_on_stream_failure() -> None:
-    """Test that auto mode removes the tool even when stream_query fails."""
+async def test_auto_mode_stream_failure_still_raises() -> None:
+    """Test that auto mode surfaces stream failures."""
     from novapaw.app.crons.heartbeat import run_heartbeat_once
     from novapaw.config.config import Config, HeartbeatConfig, LastDispatchConfig
 
@@ -264,7 +262,6 @@ async def test_auto_mode_removes_tool_on_stream_failure() -> None:
     )
 
     mock_runner = MagicMock()
-    mock_runner.toolkit = MagicMock()
     mock_runner.stream_query = MagicMock(side_effect=lambda _req: _failing_stream())
     mock_channel_manager = MagicMock()
 
@@ -283,7 +280,6 @@ async def test_auto_mode_removes_tool_on_stream_failure() -> None:
                         channel_manager=mock_channel_manager,
                     )
 
-                mock_runner.toolkit.register_tool_function.assert_called_once()
-                mock_runner.toolkit.remove_tool_function.assert_called_once_with(
-                    "send_to_channel"
-                )
+                called_req = mock_runner.stream_query.call_args.args[0]
+                assert "extra_tool_functions" in called_req
+                assert "extra_system_prompt" in called_req

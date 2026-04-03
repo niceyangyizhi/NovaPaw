@@ -1141,11 +1141,15 @@ class DingTalkChannel(BaseChannel):
         if session_webhook and (body.strip() or media_parts):
             if body.strip():
                 logger.info("dingtalk send_content_parts: sending text body")
-                await self._send_via_session_webhook(
+                ok = await self._send_via_session_webhook(
                     session_webhook,
                     body.strip(),
                     bot_prefix="",
                 )
+                if not ok:
+                    raise RuntimeError(
+                        "dingtalk session webhook text send failed"
+                    )
             for i, part in enumerate(media_parts):
                 logger.info(
                     "dingtalk send_content_parts: "
@@ -1163,6 +1167,10 @@ class DingTalkChannel(BaseChannel):
                     i + 1,
                     ok,
                 )
+                if not ok:
+                    raise RuntimeError(
+                        "dingtalk session webhook media send failed"
+                    )
             if m.get("reply_loop") is not None and m.get("reply_future"):
                 self._reply_sync(m, SENT_VIA_WEBHOOK)
             return

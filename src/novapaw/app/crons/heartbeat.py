@@ -127,11 +127,8 @@ async def run_heartbeat_once(
     optionally dispatch to last channel (target=last or target=auto).
 
     - target="last": Always send response to last_dispatch channel
-    - target="auto": Register send_to_channel tool temporarily, let LLM decide
+    - target="auto": Inject send_to_channel tool into this one-shot agent run
     - target="main": Run agent only, no dispatch
-
-    Note: For target="auto", the tool is registered before running and removed
-    after completion to avoid polluting the shared runner's toolkit.
     """
     config = load_config()
     hb = get_heartbeat_config()
@@ -181,27 +178,18 @@ async def run_heartbeat_once(
         "user_id": "main",
     }
 
-    # target="auto": Register send_to_channel tool temporarily
+    send_tool = None
+
+    # target="auto": attach one-shot tool and system prompt via request extras
     if is_auto:
-        # Register tool with bound context (override if exists)
         send_tool = create_send_to_channel_tool(channel_manager, config)
-        runner.toolkit.register_tool_function(
-            send_tool,
-            namesake_strategy="override",
+        req["extra_tool_functions"] = [send_tool]
+        req["extra_system_prompt"] = build_heartbeat_auto_system_prompt(
+            getattr(config.agents, "language", "zh")
         )
-
-        # Add system prompt to guide LLM on when to use the tool
-        req["input"].insert(0, {
-            "role": "system",
-            "content": [{
-                "type": "text",
-                "text": build_heartbeat_auto_system_prompt(
-                    getattr(config.agents, "language", "zh")
-                ),
-            }],
-        })
-
-        logger.debug("heartbeat: registered send_to_channel tool (target=auto)")
+        logger.debug(
+            "heartbeat: attached send_to_channel override (target=auto)"
+        )
 
     # target="last": Will dispatch all events to last channel
     # target="auto": Tool call will handle dispatch
@@ -253,11 +241,3 @@ async def run_heartbeat_once(
     except Exception:
         logger.exception("heartbeat run failed")
         raise
-    finally:
-        # Always clean up: remove the temporary tool if registered
-        if is_auto:
-            try:
-                runner.toolkit.remove_tool_function("send_to_channel")
-                logger.debug("heartbeat: removed send_to_channel tool")
-            except Exception as e:
-                logger.warning("heartbeat: failed to remove send_to_channel tool: %s", e)

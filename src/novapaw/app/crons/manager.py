@@ -72,8 +72,17 @@ class CronManager:
                     id=HEARTBEAT_JOB_ID,
                     replace_existing=True,
                 )
+                logger.info(
+                    "CronManager started heartbeat job: every=%s (%ss), next_run=%s",
+                    hb.every,
+                    interval_seconds,
+                    self._scheduler.get_job(HEARTBEAT_JOB_ID).next_run_time,
+                )
+            else:
+                logger.info("CronManager: heartbeat disabled in config")
 
             self._started = True
+            logger.info("CronManager started successfully")
 
     async def stop(self) -> None:
         async with self._lock:
@@ -257,6 +266,7 @@ class CronManager:
 
     async def _heartbeat_callback(self) -> None:
         """Run one heartbeat (HEARTBEAT.md as query, optional dispatch)."""
+        logger.info("heartbeat callback triggered")
         try:
             await run_heartbeat_once(
                 runner=self._runner,

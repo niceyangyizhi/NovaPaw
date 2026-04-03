@@ -60,6 +60,85 @@ class AgentRunner(Runner):
         """
         self._mcp_manager = mcp_manager
 
+    async def _build_agent_for_request(
+        self,
+        *,
+        session_id: str,
+        user_id: str,
+        channel: str,
+    ) -> NovaPawAgent:
+        """Create a fresh agent instance for one request."""
+        env_context = build_env_context(
+            session_id=session_id,
+            user_id=user_id,
+            channel=channel,
+            working_dir=str(WORKING_DIR),
+        )
+
+        mcp_clients = []
+        if self._mcp_manager is not None:
+            mcp_clients = await self._mcp_manager.get_clients()
+
+        config = load_config()
+        max_iters = config.agents.running.max_iters
+        max_input_length = config.agents.running.max_input_length
+
+        agent = NovaPawAgent(
+            env_context=env_context,
+            mcp_clients=mcp_clients,
+            memory_manager=self.memory_manager,
+            request_context={
+                "session_id": session_id,
+                "user_id": user_id,
+                "channel": channel,
+            },
+            max_iters=max_iters,
+            max_input_length=max_input_length,
+        )
+        await agent.register_mcp_clients()
+        agent.set_console_output_enabled(enabled=False)
+        return agent
+
+    @staticmethod
+    def _prepend_system_prompt(
+        agent: NovaPawAgent,
+        extra_system_prompt: str,
+    ) -> None:
+        """Prepend one-shot system guidance to the current agent prompt."""
+        if not extra_system_prompt:
+            return
+
+        merged_prompt = (
+            f"{extra_system_prompt}\n\n{agent.sys_prompt}"
+            if agent.sys_prompt
+            else extra_system_prompt
+        )
+        agent._sys_prompt = merged_prompt  # noqa: SLF001
+
+        for msg, _marks in agent.memory.content:
+            if msg.role == "system":
+                msg.content = merged_prompt
+                break
+
+    @staticmethod
+    def _apply_request_overrides(
+        agent: NovaPawAgent,
+        request: AgentRequest,
+    ) -> None:
+        """Apply one-shot request-level tools and prompt overrides."""
+        extra_tool_functions = (
+            getattr(request, "extra_tool_functions", None) or []
+        )
+        for tool_func in extra_tool_functions:
+            agent.toolkit.register_tool_function(
+                tool_func,
+                namesake_strategy="override",
+            )
+
+        extra_system_prompt = getattr(request, "extra_system_prompt", None)
+        if extra_system_prompt:
+            AgentRunner._prepend_system_prompt(agent, extra_system_prompt)
+
     _APPROVAL_TIMEOUT_SECONDS = TOOL_GUARD_APPROVAL_TIMEOUT_SECONDS
 
     async def _resolve_pending_approval(
@@ -195,36 +274,11 @@ class AgentRunner(Runner):
                 ),
             )
 
-            env_context = build_env_context(
+            agent = await self._build_agent_for_request(
                 session_id=session_id,
                 user_id=user_id,
                 channel=channel,
-                working_dir=str(WORKING_DIR),
             )
-
-            # Get MCP clients from manager (hot-reloadable)
-            mcp_clients = []
-            if self._mcp_manager is not None:
-                mcp_clients = await self._mcp_manager.get_clients()
-
-            config = load_config()
-            max_iters = config.agents.running.max_iters
-            max_input_length = config.agents.running.max_input_length
-
-            agent = NovaPawAgent(
-                env_context=env_context,
-                mcp_clients=mcp_clients,
-                memory_manager=self.memory_manager,
-                request_context={
-                    "session_id": session_id,
-                    "user_id": user_id,
-                    "channel": channel,
-                },
-                max_iters=max_iters,
-                max_input_length=max_input_length,
-            )
-            await agent.register_mcp_clients()
-            agent.set_console_output_enabled(enabled=False)
 
             logger.debug(
                 f"Agent Query msgs {msgs}",
@@ -264,6 +318,7 @@ class AgentRunner(Runner):
             # AGENTS.md / SOUL.md / PROFILE.md, not the stale one saved
             # in the session state.
             agent.rebuild_sys_prompt()
+            self._apply_request_overrides(agent, request)
 
             async for msg, last in stream_printing_messages(
                 agents=[agent],
