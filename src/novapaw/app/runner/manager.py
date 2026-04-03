@@ -82,7 +82,7 @@ class ChatManager:
         Useful for auto-registration when chats come from channels.
 
         Args:
-            session_id: Session identifier (channel:user_id)
+            session_id: Shared active session identifier
             user_id: User identifier
             channel: Channel name
             name: Chat name
@@ -91,13 +91,14 @@ class ChatManager:
             Chat specification (existing or newly created)
         """
         async with self._lock:
-            # Try to find existing by session_id
-            existing = await self._repo.get_chat_by_id(
-                session_id,
-                user_id,
-                channel,
-            )
+            existing = await self._repo.get_chat_by_id(session_id)
             if existing:
+                existing.user_id = user_id
+                existing.channel = channel
+                existing.meta["last_user_id"] = user_id
+                existing.meta["last_channel"] = channel
+                existing.updated_at = datetime.now(timezone.utc)
+                await self._repo.upsert_chat(existing)
                 return existing
 
             # Create new
@@ -106,6 +107,10 @@ class ChatManager:
                 user_id=user_id,
                 channel=channel,
                 name=name,
+                meta={
+                    "last_user_id": user_id,
+                    "last_channel": channel,
+                },
             )
             # Call internal create without lock (already locked)
             await self._repo.upsert_chat(spec)

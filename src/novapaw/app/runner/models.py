@@ -25,7 +25,7 @@ class ChatSpec(BaseModel):
     name: str = Field(default="New Chat", description="Chat name")
     session_id: str = Field(
         ...,
-        description="Session identifier (channel:user_id format)",
+        description="Session identifier (shared active session id)",
     )
     user_id: str = Field(..., description="User identifier")
     channel: str = Field(default=DEFAULT_CHANNEL, description="Channel name")

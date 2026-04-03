@@ -129,6 +129,9 @@ async def run_heartbeat_once(
     - target="last": Always send response to last_dispatch channel
     - target="auto": Inject send_to_channel tool into this one-shot agent run
     - target="main": Run agent only, no dispatch
+
+    When target="auto" and message is sent, the interaction will be saved
+    to today's daily session (YYYY-MM-DD).
     """
     config = load_config()
     hb = get_heartbeat_config()
@@ -166,7 +169,10 @@ async def run_heartbeat_once(
         target = HEARTBEAT_DEFAULT_TARGET  # Degrade to main mode
         is_auto = False
 
-    # Build request
+    # Get today's session ID for saving heartbeat messages (auto mode only)
+    today_session_id = datetime.now().strftime("%Y-%m-%d") if is_auto else None
+
+    # Build request (session_id remains "main" to avoid polluting daily session state)
     req: Dict[str, Any] = {
         "input": [
             {
@@ -182,17 +188,26 @@ async def run_heartbeat_once(
 
     # target="auto": attach one-shot tool and system prompt via request extras
     if is_auto:
-        send_tool = create_send_to_channel_tool(channel_manager, config)
+        # Get session from runner for saving heartbeat messages
+        session = getattr(runner, 'session', None)
+
+        send_tool = create_send_to_channel_tool(
+            channel_manager=channel_manager,
+            config=config,
+            session=session,
+            today_session_id=today_session_id,
+            query_text=query_text,
+        )
         req["extra_tool_functions"] = [send_tool]
         req["extra_system_prompt"] = build_heartbeat_auto_system_prompt(
             getattr(config.agents, "language", "zh")
         )
         logger.debug(
-            "heartbeat: attached send_to_channel override (target=auto)"
+            "heartbeat: attached send_to_channel with session saving (target=auto)"
         )
 
     # target="last": Will dispatch all events to last channel
-    # target="auto": Tool call will handle dispatch
+    # target="auto": Tool call will handle dispatch and session saving
     # target="main": No dispatch
 
     async def _run() -> None:

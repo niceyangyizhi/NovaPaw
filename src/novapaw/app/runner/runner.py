@@ -6,8 +6,11 @@ import asyncio
 import json
 import logging
 import time
+from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 
+from agentscope.memory import InMemoryMemory
 from agentscope.message import Msg, TextBlock
 from agentscope.pipeline import stream_printing_messages
 from agentscope_runtime.engine.runner import Runner
@@ -20,7 +23,7 @@ from .command_dispatch import (
     run_command_path,
 )
 from .query_error_dump import write_query_error_dump
-from .session import SafeJSONSession
+from .session import SafeJSONSession, SessionResolution
 from .utils import build_env_context
 from ..channels.schema import DEFAULT_CHANNEL
 from ...agents.memory import MemoryManager
@@ -59,6 +62,112 @@ class AgentRunner(Runner):
             mcp_manager: MCPClientManager instance
         """
         self._mcp_manager = mcp_manager
+
+    async def _resolve_request_session(
+        self,
+        request: AgentRequest,
+    ) -> tuple[AgentRequest, SessionResolution]:
+        """Resolve this request onto the shared active daily session.
+
+        Special case: session_id="main" is preserved for heartbeat isolation.
+        Heartbeat keeps its own session and only writes to daily session when
+        a message is actually sent (handled separately in heartbeat_tools).
+        """
+        requested_session_id = getattr(request, "session_id", "") or ""
+
+        # Preserve "main" session for heartbeat isolation
+        if requested_session_id == "main":
+            return request, SessionResolution(session_id="main")
+
+        resolution = await self.session.resolve_active_session(
+            requested_session_id=requested_session_id,
+        )
+
+        if hasattr(request, "model_copy"):
+            request = request.model_copy(
+                update={"session_id": resolution.session_id},
+            )
+        else:
+            request = deepcopy(request)
+            request.session_id = resolution.session_id
+
+        if requested_session_id != resolution.session_id:
+            logger.info(
+                "Resolved request session: requested=%s active=%s",
+                requested_session_id,
+                resolution.session_id,
+            )
+
+        return request, resolution
+
+    async def _finalize_closed_session(
+        self,
+        previous_session_id: str,
+        next_session_id: str,
+    ) -> None:
+        """Summarize and mark the previous daily session as closed.
+
+        Even if memory summarization fails, session metadata (closed_at,
+        rollover_to) is always written to ensure proper session lifecycle.
+        """
+        if not previous_session_id:
+            return
+
+        closed_at = datetime.now().isoformat()
+        summary_text = ""
+
+        # Try to build daily summary (non-critical, can fail gracefully)
+        try:
+            session_state = await self.session.get_session_state_dict(
+                session_id=previous_session_id,
+                allow_not_exist=True,
+            )
+            memory_state = session_state.get("agent", {}).get("memory")
+
+            if memory_state and self.memory_manager is not None:
+                memory = InMemoryMemory()
+                memory.load_state_dict(memory_state)
+                messages = await memory.get_memory()
+                if messages:
+                    summary_text = await self.memory_manager.summary_memory(
+                        messages,
+                    )
+        except Exception:
+            logger.warning(
+                "Failed to build daily summary for session %s (non-critical)",
+                previous_session_id,
+                exc_info=True,
+            )
+
+        # Always write session metadata (critical, should not fail silently)
+        try:
+            await self.session.update_session_state(
+                session_id=previous_session_id,
+                key="session_meta.closed_at",
+                value=closed_at,
+            )
+            await self.session.update_session_state(
+                session_id=previous_session_id,
+                key="session_meta.rollover_to",
+                value=next_session_id,
+            )
+            if summary_text:
+                await self.session.update_session_state(
+                    session_id=previous_session_id,
+                    key="session_meta.daily_summary",
+                    value=summary_text,
+                )
+            logger.info(
+                "Closed daily session %s and rolled over to %s",
+                previous_session_id,
+                next_session_id,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to write session metadata for %s (critical)",
+                previous_session_id,
+            )
+            raise
 
     async def _build_agent_for_request(
         self,
@@ -228,6 +337,15 @@ class AgentRunner(Runner):
         """
         Handle agent query.
         """
+        request, session_resolution = await self._resolve_request_session(
+            request,
+        )
+        if session_resolution.rolled_over and session_resolution.previous_session_id:
+            await self._finalize_closed_session(
+                session_resolution.previous_session_id,
+                session_resolution.session_id,
+            )
+
         query = _get_last_user_text(msgs)
         session_id = getattr(request, "session_id", "") or ""
 
@@ -303,7 +421,6 @@ class AgentRunner(Runner):
             try:
                 await self.session.load_session_state(
                     session_id=session_id,
-                    user_id=user_id,
                     agent=agent,
                 )
             except KeyError as e:
@@ -356,7 +473,6 @@ class AgentRunner(Runner):
             if agent is not None and session_state_loaded:
                 await self.session.save_session_state(
                     session_id=session_id,
-                    user_id=user_id,
                     agent=agent,
                 )
 

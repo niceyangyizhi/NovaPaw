@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from ..models import ChatSpec, ChatsFile
-from ...channels.schema import DEFAULT_CHANNEL
 
 
 class BaseChatRepository(ABC):
@@ -47,26 +46,18 @@ class BaseChatRepository(ABC):
     async def get_chat_by_id(
         self,
         session_id: str,
-        user_id: str,
-        channel: str = DEFAULT_CHANNEL,
     ) -> Optional[ChatSpec]:
-        """Get chat spec by session_id and user_id.
+        """Get chat spec by shared session_id.
 
         Args:
-            session_id: Session identifier (e.g., "discord:alice")
-            user_id: User identifier
-            channel: Channel identifier
+            session_id: Session identifier
 
         Returns:
             ChatSpec or None if not found
         """
         cf = await self.load()
         for chat in cf.chats:
-            if (
-                chat.session_id == session_id
-                and chat.user_id == user_id
-                and chat.channel == channel
-            ):
+            if chat.session_id == session_id:
                 return chat
         return None
 

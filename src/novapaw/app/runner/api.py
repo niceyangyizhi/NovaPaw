@@ -150,7 +150,6 @@ async def get_chat(
 
     state = await session.get_session_state_dict(
         chat_spec.session_id,
-        chat_spec.user_id,
     )
     if not state:
         return ChatHistory(messages=[])

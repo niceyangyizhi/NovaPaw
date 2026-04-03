@@ -121,7 +121,6 @@ async def run_command_path(
     memory = ReMeInMemoryMemory(token_counter=_get_token_counter())
     session_state = await runner.session.get_session_state_dict(
         session_id=session_id,
-        user_id=user_id,
     )
     memory_state = session_state.get("agent", {}).get("memory")
     memory.load_state_dict(memory_state)
@@ -142,19 +141,16 @@ async def run_command_path(
         )
     yield response_msg, True
 
-    # Update memory key with session_id & user_id to session,
-    # but only if identifiers are present
-    if session_id and user_id:
+    if session_id:
         await runner.session.update_session_state(
             session_id=session_id,
             key="agent.memory",
             value=memory.state_dict(),
-            user_id=user_id,
         )
     else:
         logger.warning(
             "Skipping session_state update for conversation"
-            " memory due to missing session_id or user_id (session_id=%r, "
+            " memory due to missing session_id (session_id=%r, "
             "user_id=%r)",
             session_id,
             user_id,

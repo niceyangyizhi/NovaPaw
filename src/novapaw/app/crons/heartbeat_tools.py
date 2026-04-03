@@ -2,21 +2,86 @@
 """Heartbeat-specific tools (auto mode only)."""
 
 import logging
+from datetime import datetime
 from typing import TYPE_CHECKING, Callable, Coroutine, Any
 
 from agentscope.tool import ToolResponse
-from agentscope.message import TextBlock
+from agentscope.message import Msg, TextBlock
 
 if TYPE_CHECKING:
     from ..channels.manager import ChannelManager
     from ..config.config import LastDispatchConfig
+    from ..runner.session import SafeJSONSession
 
 logger = logging.getLogger(__name__)
+
+
+async def save_heartbeat_messages(
+    session: "SafeJSONSession",
+    session_id: str,
+    query_text: str,
+    response_text: str,
+) -> None:
+    """Save heartbeat interaction to daily session if message was sent.
+
+    Args:
+        session: SafeJSONSession instance for state management
+        session_id: Today's session ID (YYYY-MM-DD)
+        query_text: The HEARTBEAT.md query text
+        response_text: The content sent to user
+    """
+    if not session_id:
+        logger.warning("save_heartbeat_messages: session_id is empty, skip saving")
+        return
+
+    try:
+        # Create message objects
+        user_msg = Msg(
+            name="user",
+            role="user",
+            content=[TextBlock(type="text", text=query_text)],
+        )
+        assistant_msg = Msg(
+            name="heartbeat",
+            role="assistant",
+            content=[TextBlock(type="text", text=response_text)],
+        )
+
+        # Save user query
+        await session.update_session_state(
+            session_id=session_id,
+            key="heartbeat_messages.user",
+            value=user_msg.to_dict(),
+            create_if_not_exist=True,
+        )
+
+        # Save assistant response
+        await session.update_session_state(
+            session_id=session_id,
+            key="heartbeat_messages.assistant",
+            value=assistant_msg.to_dict(),
+            create_if_not_exist=True,
+        )
+
+        logger.info(
+            "Heartbeat messages saved to session %s (query_len=%d, response_len=%d)",
+            session_id,
+            len(query_text),
+            len(response_text),
+        )
+    except Exception:
+        logger.exception(
+            "Failed to save heartbeat messages to session %s",
+            session_id,
+        )
 
 
 def create_send_to_channel_tool(
     channel_manager: "ChannelManager",
     config: Any,  # Config object, using Any to avoid circular import
+    session: "SafeJSONSession | None" = None,
+    today_session_id: str | None = None,
+    query_text: str | None = None,
 ) -> Callable[..., Coroutine[Any, Any, ToolResponse]]:
     """
     Create send_to_channel tool with bound context.
@@ -24,6 +89,9 @@ def create_send_to_channel_tool(
     Args:
         channel_manager: Channel manager for sending messages
         config: Config object containing last_dispatch info
+        session: Optional SafeJSONSession for saving heartbeat messages
+        today_session_id: Today's session ID (YYYY-MM-DD format)
+        query_text: The HEARTBEAT.md query text (for saving to session)
 
     Returns:
         Async function that can be registered as a tool
@@ -98,6 +166,16 @@ def create_send_to_channel_tool(
             )
             state["sent"] = True
             logger.info("send_to_channel: message sent successfully")
+
+            # Save heartbeat messages to daily session (if session provided)
+            if session and today_session_id and query_text:
+                await save_heartbeat_messages(
+                    session=session,
+                    session_id=today_session_id,
+                    query_text=query_text,
+                    response_text=content,
+                )
+
             return ToolResponse(
                 content=[
                     TextBlock(
