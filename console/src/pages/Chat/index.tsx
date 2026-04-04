@@ -1,6 +1,7 @@
 import {
   AgentScopeRuntimeWebUI,
   IAgentScopeRuntimeWebUIOptions,
+  IAgentScopeRuntimeWebUIRef,
 } from "@agentscope-ai/chat";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Button, Result, GetProp, Upload, Image } from "antd";
@@ -54,8 +55,38 @@ export default function ChatPage() {
   const [showModelPrompt, setShowModelPrompt] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const chatUiRef = useRef<IAgentScopeRuntimeWebUIRef>(null);
   // Store original full-resolution images as array (most recent first)
   const originalImagesRef = useRef<string[]>([]);
+
+  // Disable input for historical sessions, and navigate to today's session if none selected
+  useEffect(() => {
+    const checkSessionActive = async () => {
+      try {
+        const sessions = await sessionApi.getSessionList();
+        
+        // If no session ID specified, navigate to today's active session
+        if (!chatId) {
+          const todaySession = sessions.find(s => (s as any).isActive === true);
+          if (todaySession) {
+            navigate(`/chat/${todaySession.id}`, { replace: true });
+          }
+          return;
+        }
+        
+        if (!chatUiRef.current) return;
+        
+        // Check if current session is active and disable input if not
+        const currentSession = sessions.find(s => s.id === chatId);
+        const isActive = currentSession ? (currentSession as any).isActive !== false : true;
+        chatUiRef.current?.input?.setDisabled?.(!isActive);
+      } catch (e) {
+        console.error("Failed to check session active status:", e);
+      }
+    };
+    
+    checkSessionActive();
+  }, [chatId, navigate]);
 
   useEffect(() => {
     const styleId = "novapaw-input-attachment-preview-style";
@@ -320,21 +351,13 @@ export default function ChatPage() {
     return sessionApi.getSession(sessionId);
   }, []);
 
-  const createSessionWrapped = useCallback(async (session: any) => {
-    const result = await sessionApi.createSession(session);
-    const newSessionId = result[0]?.id;
-    if (isChatActiveRef.current && newSessionId) {
-      lastSessionIdRef.current = newSessionId;
-      navigateRef.current(`/chat/${newSessionId}`, { replace: true });
-    }
-    return result;
-  }, []);
-
+  // Session creation is disabled - all sessions are automatically created daily
+  // Users cannot manually create new sessions
   const wrappedSessionApi = useMemo(
     () => ({
       getSessionList: getSessionListWrapped,
       getSession: getSessionWrapped,
-      createSession: createSessionWrapped,
+      // createSession is intentionally omitted to disable manual session creation
       updateSession: sessionApi.updateSession.bind(sessionApi),
       removeSession: sessionApi.removeSession.bind(sessionApi),
     }),
@@ -428,7 +451,7 @@ export default function ChatPage() {
 
   return (
     <div ref={containerRef} style={{ height: "100%", width: "100%" }}>
-      <AgentScopeRuntimeWebUI options={options} />
+      <AgentScopeRuntimeWebUI ref={chatUiRef} options={options} />
 
       <Modal open={showModelPrompt} closable={false} footer={null} width={480}>
         <Result

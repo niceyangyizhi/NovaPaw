@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Chat management API."""
 from __future__ import annotations
-from typing import Optional
+from typing import Any, Optional
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from agentscope.memory import InMemoryMemory
@@ -60,20 +60,68 @@ def get_session(request: Request) -> SafeJSONSession:
     return runner.session
 
 
+def get_runner(request: Request):
+    """Get the runner from app state.
+
+    Args:
+        request: FastAPI request object
+
+    Returns:
+        Runner instance
+
+    Raises:
+        HTTPException: If runner is not initialized
+    """
+    runner = getattr(request.app.state, "runner", None)
+    if runner is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Runner not initialized",
+        )
+    return runner
+
+
 @router.get("", response_model=list[ChatSpec])
 async def list_chats(
     user_id: Optional[str] = Query(None, description="Filter by user ID"),
     channel: Optional[str] = Query(None, description="Filter by channel"),
     mgr: ChatManager = Depends(get_chat_manager),
+    session: SafeJSONSession = Depends(get_session),
+    runner: Any = Depends(get_runner),
 ):
     """List all chats with optional filters.
+
+    Also triggers daily session resolution: creates today's session if needed
+    and marks the previous session as rolled over.
 
     Args:
         user_id: Optional user ID to filter chats
         channel: Optional channel name to filter chats
         mgr: Chat manager dependency
+        session: SafeJSONSession dependency
+        runner: Runner dependency for session resolution
     """
-    return await mgr.list_chats(user_id=user_id, channel=channel)
+    # Trigger daily session resolution (creates today's session if needed)
+    resolution = await session.resolve_active_session(requested_session_id="")
+    
+    # If session rolled over, finalize the previous session
+    if resolution.rolled_over and resolution.previous_session_id:
+        await runner._finalize_closed_session(
+            previous_session_id=resolution.previous_session_id,
+            next_session_id=resolution.session_id,
+        )
+    
+    chats = await mgr.list_chats(user_id=user_id, channel=channel)
+    
+    # Get active session ID
+    active_meta = await session._load_active_session_meta()
+    active_session_id = active_meta.get("session_id", "") if active_meta else ""
+    
+    # Mark each chat's is_active field
+    for chat in chats:
+        chat.is_active = (chat.session_id == active_session_id)
+    
+    return chats
 
 
 @router.post("", response_model=ChatSpec)

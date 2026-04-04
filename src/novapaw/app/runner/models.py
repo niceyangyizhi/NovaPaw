@@ -41,6 +41,10 @@ class ChatSpec(BaseModel):
         default_factory=dict,
         description="Additional metadata",
     )
+    is_active: bool = Field(
+        default=False,
+        description="Whether this session is the current active session",
+    )
 
 
 class ChatHistory(BaseModel):

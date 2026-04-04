@@ -60,6 +60,8 @@ interface ExtendedSession extends IAgentScopeRuntimeWebUISession {
   meta: Record<string, unknown>;
   /** Real backend UUID, used when id is overridden with a local timestamp. */
   realId?: string;
+  /** Whether this session is the current active session */
+  isActive?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -268,6 +270,7 @@ const resolveRealId = (
 
 class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
   private sessionList: IAgentScopeRuntimeWebUISession[] = [];
+  private activeSessionId: string | null = null;
 
   /**
    * Deduplicates concurrent getSessionList calls so that two parallel
@@ -347,9 +350,15 @@ class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
     this.sessionListRequest = (async () => {
       try {
         const chats = await api.listChats();
+
         const newList = chats
           .filter((c) => c.id && c.id !== "undefined" && c.id !== "null")
-          .map(chatSpecToSession)
+          .map((c) => {
+            const session = chatSpecToSession(c);
+            // Use is_active from backend response
+            (session as ExtendedSession).isActive = c.is_active ?? false;
+            return session;
+          })
           .reverse();
 
         // Merge: preserve realId mappings (timestamp → UUID) stored in memory
@@ -359,6 +368,7 @@ class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
               (e as ExtendedSession).sessionId ===
               (s as ExtendedSession).sessionId,
           ) as ExtendedSession | undefined;
+          // Preserve realId mapping, but always use the latest isActive from backend
           return existing?.realId
             ? { ...s, id: existing.id, realId: existing.realId }
             : s;

@@ -117,6 +117,8 @@ class AgentRunner(Runner):
         summary_text = ""
 
         # Try to build daily summary (non-critical, can fail gracefully)
+        # Note: Memory summarization uses LLM and does NOT require embedding.
+        # Embedding is only needed for vector search, which is optional.
         try:
             session_state = await self.session.get_session_state_dict(
                 session_id=previous_session_id,
@@ -124,14 +126,36 @@ class AgentRunner(Runner):
             )
             memory_state = session_state.get("agent", {}).get("memory")
 
-            if memory_state and self.memory_manager is not None:
+            if memory_state:
                 memory = InMemoryMemory()
                 memory.load_state_dict(memory_state)
                 messages = await memory.get_memory()
                 if messages:
-                    summary_text = await self.memory_manager.summary_memory(
-                        messages,
-                    )
+                    # Use LLM to summarize, embedding is NOT required
+                    # Try memory_manager first, fallback to direct LLM if it fails
+                    summary_text = ""
+                    if self.memory_manager is not None:
+                        try:
+                            summary_text = await self.memory_manager.summary_memory(
+                                messages,
+                            )
+                            # Check if summary failed (returns error string)
+                            if summary_text.startswith("[Summarizer] failed"):
+                                logger.warning(
+                                    "memory_manager.summary_memory returned error: %s",
+                                    summary_text,
+                                )
+                                summary_text = ""
+                        except Exception as e:
+                            logger.warning(
+                                "memory_manager.summary_memory failed, fallback to LLM: %s",
+                                e,
+                            )
+                            summary_text = ""
+                    
+                    # Fallback: use agent's LLM directly
+                    if not summary_text:
+                        summary_text = await self._summarize_with_llm(messages)
         except Exception:
             logger.warning(
                 "Failed to build daily summary for session %s (non-critical)",
@@ -168,6 +192,89 @@ class AgentRunner(Runner):
                 previous_session_id,
             )
             raise
+
+    async def _summarize_with_llm(self, messages: list) -> str:
+        """Summarize messages using LLM without requiring embedding.
+
+        This is a fallback when memory_manager (embedding) is not configured.
+        Memory summarization should always work as long as LLM is available.
+
+        Args:
+            messages: List of Msg objects from InMemoryMemory
+
+        Returns:
+            Summary text
+        """
+        if not messages:
+            return ""
+
+        try:
+            # Extract text content from Msg objects
+            conversation_lines = []
+            for msg in messages[-50:]:  # Last 50 messages
+                role = getattr(msg, 'role', 'unknown')
+                content = getattr(msg, 'content', '')
+                # content might be a list of dicts
+                if isinstance(content, list):
+                    text_parts = []
+                    for item in content:
+                        if isinstance(item, dict):
+                            if item.get('type') == 'text':
+                                text_parts.append(item.get('text', ''))
+                            elif item.get('type') == 'thinking':
+                                text_parts.append(f"[思考: {item.get('thinking', '')[:100]}...]")
+                        elif isinstance(item, str):
+                            text_parts.append(item)
+                    content = ' '.join(text_parts)
+                elif not isinstance(content, str):
+                    content = str(content)
+                
+                if content.strip():
+                    conversation_lines.append(f"{role}: {content}")
+            
+            if not conversation_lines:
+                return ""
+            
+            conversation_text = "\n".join(conversation_lines)
+            
+            # Build summary prompt
+            summary_prompt = f"""请总结以下对话的关键内容，提取重要信息、决策和待办事项。保持简洁，不超过500字。
+
+对话记录：
+{conversation_text}
+
+总结："""
+
+            # Use the agent's LLM to generate summary
+            agent = await self._build_agent_for_request(
+                session_id="summary",
+                user_id="system",
+                channel="internal",
+            )
+            
+            # NovaPawAgent uses 'reply' method, not 'run'
+            from agentscope.message import Msg
+            summary_msg = Msg(
+                name="user",
+                content=summary_prompt,
+                role="user",
+            )
+            response = await agent.reply(summary_msg)
+            
+            # Extract text from response
+            if hasattr(response, 'content'):
+                if isinstance(response.content, list):
+                    # Extract text from content list
+                    text_parts = []
+                    for item in response.content:
+                        if isinstance(item, dict) and item.get('type') == 'text':
+                            text_parts.append(item.get('text', ''))
+                    return ' '.join(text_parts)
+                return str(response.content)
+            return str(response)
+        except Exception as e:
+            logger.warning("Failed to summarize with LLM: %s", e)
+            return ""
 
     async def _build_agent_for_request(
         self,
