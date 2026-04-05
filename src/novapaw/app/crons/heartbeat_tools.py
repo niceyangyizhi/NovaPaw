@@ -2,9 +2,9 @@
 """Heartbeat-specific tools (auto mode only)."""
 
 import logging
-from datetime import datetime
 from typing import TYPE_CHECKING, Callable, Coroutine, Any
 
+from agentscope.memory import InMemoryMemory
 from agentscope.tool import ToolResponse
 from agentscope.message import Msg, TextBlock
 
@@ -22,7 +22,7 @@ async def save_heartbeat_messages(
     query_text: str,
     response_text: str,
 ) -> None:
-    """Save heartbeat interaction to daily session if message was sent.
+    """Save heartbeat interaction to daily session history if message was sent.
 
     Args:
         session: SafeJSONSession instance for state management
@@ -47,24 +47,27 @@ async def save_heartbeat_messages(
             content=[TextBlock(type="text", text=response_text)],
         )
 
-        # Save user query
-        await session.update_session_state(
+        state = await session.get_session_state_dict(
             session_id=session_id,
-            key="heartbeat_messages.user",
-            value=user_msg.to_dict(),
-            create_if_not_exist=True,
+            allow_not_exist=True,
         )
+        memory = InMemoryMemory()
+        memory_state = state.get("agent", {}).get("memory")
+        if memory_state:
+            memory.load_state_dict(memory_state)
 
-        # Save assistant response
+        await memory.add(user_msg)
+        await memory.add(assistant_msg)
         await session.update_session_state(
             session_id=session_id,
-            key="heartbeat_messages.assistant",
-            value=assistant_msg.to_dict(),
+            key="agent.memory",
+            value=memory.state_dict(),
             create_if_not_exist=True,
         )
 
         logger.info(
-            "Heartbeat messages saved to session %s (query_len=%d, response_len=%d)",
+            "Heartbeat messages appended to agent.memory for session %s "
+            "(query_len=%d, response_len=%d)",
             session_id,
             len(query_text),
             len(response_text),

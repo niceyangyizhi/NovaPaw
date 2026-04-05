@@ -70,6 +70,14 @@ class ChatManager:
         async with self._lock:
             return await self._repo.get_chat(chat_id)
 
+    async def get_chat_by_session(
+        self,
+        session_id: str,
+    ) -> Optional[ChatSpec]:
+        """Get chat spec by shared session_id."""
+        async with self._lock:
+            return await self._repo.get_chat_by_id(session_id)
+
     async def get_or_create_chat(
         self,
         session_id: str,

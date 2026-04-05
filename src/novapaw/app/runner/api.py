@@ -13,6 +13,7 @@ from .models import (
     ChatHistory,
 )
 from .utils import agentscope_msg_to_message
+from ..channels.schema import DEFAULT_CHANNEL
 
 
 router = APIRouter(prefix="/chats", tags=["chats"])
@@ -109,6 +110,17 @@ async def list_chats(
         await runner._finalize_closed_session(
             previous_session_id=resolution.previous_session_id,
             next_session_id=resolution.session_id,
+        )
+
+    # Materialize today's active session as a visible chat entry so the UI can
+    # navigate to it even before the first explicit user message arrives.
+    active_chat = await mgr.get_chat_by_session(resolution.session_id)
+    if active_chat is None:
+        await mgr.get_or_create_chat(
+            session_id=resolution.session_id,
+            user_id=user_id or "main",
+            channel=channel or DEFAULT_CHANNEL,
+            name=resolution.session_id,
         )
     
     chats = await mgr.list_chats(user_id=user_id, channel=channel)

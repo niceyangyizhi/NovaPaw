@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from types import SimpleNamespace
 from agentscope.tool import ToolResponse
+from novapaw.app.runner.session import SafeJSONSession
 
 from novapaw.app.crons.heartbeat_tools import create_send_to_channel_tool
 
@@ -257,6 +258,31 @@ async def test_send_to_channel_multiline_content() -> None:
     assert isinstance(response, ToolResponse)
     assert len(channel_manager.sent_messages) == 1
     assert channel_manager.sent_messages[0]["text"] == content
+
+
+@pytest.mark.asyncio
+async def test_send_to_channel_persists_into_agent_memory(tmp_path) -> None:
+    """Heartbeat messages should be appended to the formal session history."""
+    channel_manager = MockChannelManager()
+    config = MockConfig()
+    session = SafeJSONSession(save_dir=str(tmp_path))
+    send_tool = create_send_to_channel_tool(
+        channel_manager,
+        config,
+        session=session,
+        today_session_id="2026-04-05",
+        query_text="heartbeat query",
+    )
+
+    await send_tool("heartbeat response")
+
+    state = await session.get_session_state_dict("2026-04-05")
+    content = state["agent"]["memory"]["content"]
+    assert len(content) == 2
+    assert content[0][0]["role"] == "user"
+    assert content[0][0]["content"][0]["text"] == "heartbeat query"
+    assert content[1][0]["role"] == "assistant"
+    assert content[1][0]["content"][0]["text"] == "heartbeat response"
 
 
 # =============================================================================
