@@ -26,11 +26,17 @@ from .query_error_dump import write_query_error_dump
 from .session import SafeJSONSession, SessionResolution
 from .utils import build_env_context
 from ..channels.schema import DEFAULT_CHANNEL
+from ..memory import (
+    build_daily_memory_guidance,
+    load_recent_daily_memories,
+    save_daily_memory_artifact,
+)
 from ...agents.memory import MemoryManager
 from ...agents.react_agent import NovaPawAgent
 from ...security.tool_guard.models import TOOL_GUARD_DENIED_MARK
 from ...config import load_config
 from ...constant import (
+    DAILY_MEMORY_RECENT_LIMIT,
     TOOL_GUARD_APPROVAL_TIMEOUT_SECONDS,
     WORKING_DIR,
 )
@@ -115,6 +121,7 @@ class AgentRunner(Runner):
 
         closed_at = datetime.now().isoformat()
         summary_text = ""
+        source_message_count = 0
 
         # Try to build daily summary (non-critical, can fail gracefully)
         # Note: Memory summarization uses LLM and does NOT require embedding.
@@ -130,6 +137,7 @@ class AgentRunner(Runner):
                 memory = InMemoryMemory()
                 memory.load_state_dict(memory_state)
                 messages = await memory.get_memory()
+                source_message_count = len(messages)
                 if messages:
                     # Use LLM to summarize, embedding is NOT required
                     # Try memory_manager first, fallback to direct LLM if it fails
@@ -159,6 +167,26 @@ class AgentRunner(Runner):
         except Exception:
             logger.warning(
                 "Failed to build daily summary for session %s (non-critical)",
+                previous_session_id,
+                exc_info=True,
+            )
+
+        try:
+            artifact_path = await save_daily_memory_artifact(
+                session_id=previous_session_id,
+                summary=summary_text,
+                content=summary_text,
+                generated_at=closed_at,
+                source_message_count=source_message_count,
+            )
+            logger.info(
+                "Persisted daily memory artifact for %s to %s",
+                previous_session_id,
+                artifact_path,
+            )
+        except Exception:
+            logger.warning(
+                "Failed to persist daily memory artifact for session %s",
                 previous_session_id,
                 exc_info=True,
             )
@@ -542,6 +570,23 @@ class AgentRunner(Runner):
             # AGENTS.md / SOUL.md / PROFILE.md, not the stale one saved
             # in the session state.
             agent.rebuild_sys_prompt()
+            config = load_config()
+            recent_daily_memories = await load_recent_daily_memories(
+                exclude_session_id=session_id,
+                limit=DAILY_MEMORY_RECENT_LIMIT,
+            )
+            if recent_daily_memories:
+                daily_memory_prompt = build_daily_memory_guidance(
+                    recent_daily_memories,
+                    language=config.agents.language,
+                )
+                if daily_memory_prompt:
+                    self._prepend_system_prompt(agent, daily_memory_prompt)
+                    logger.info(
+                        "Attached %d recent daily memories to session %s",
+                        len(recent_daily_memories),
+                        session_id,
+                    )
             self._apply_request_overrides(agent, request)
 
             async for msg, last in stream_printing_messages(

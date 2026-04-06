@@ -128,6 +128,12 @@ CUSTOMIZED_SKILLS_DIR = WORKING_DIR / "customized_skills"
 
 # Memory directory
 MEMORY_DIR = WORKING_DIR / "memory"
+MEMORY_DAILY_DIR = MEMORY_DIR / "daily"
+DAILY_MEMORY_RECENT_LIMIT = EnvVarLoader.get_int(
+    "NOVAPAW_DAILY_MEMORY_RECENT_LIMIT",
+    3,
+    min_value=0,
+)
 
 # Custom channel modules (installed via `novapaw channels install`); manager
 # loads BaseChannel subclasses from here.
