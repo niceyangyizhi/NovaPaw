@@ -88,46 +88,21 @@ async def list_chats(
     channel: Optional[str] = Query(None, description="Filter by channel"),
     mgr: ChatManager = Depends(get_chat_manager),
     session: SafeJSONSession = Depends(get_session),
-    runner: Any = Depends(get_runner),
 ):
     """List all chats with optional filters.
-
-    Also triggers daily session resolution: creates today's session if needed
-    and marks the previous session as rolled over.
 
     Args:
         user_id: Optional user ID to filter chats
         channel: Optional channel name to filter chats
         mgr: Chat manager dependency
         session: SafeJSONSession dependency
-        runner: Runner dependency for session resolution
     """
-    # Trigger daily session resolution (creates today's session if needed)
-    resolution = await session.resolve_active_session(requested_session_id="")
-    
-    # If session rolled over, finalize the previous session
-    if resolution.rolled_over and resolution.previous_session_id:
-        await runner._finalize_closed_session(
-            previous_session_id=resolution.previous_session_id,
-            next_session_id=resolution.session_id,
-        )
-
-    # Materialize today's active session as a visible chat entry so the UI can
-    # navigate to it even before the first explicit user message arrives.
-    active_chat = await mgr.get_chat_by_session(resolution.session_id)
-    if active_chat is None:
-        await mgr.get_or_create_chat(
-            session_id=resolution.session_id,
-            user_id=user_id or "main",
-            channel=channel or DEFAULT_CHANNEL,
-            name=resolution.session_id,
-        )
-    
-    chats = await mgr.list_chats(user_id=user_id, channel=channel)
-    
     # Get active session ID
     active_meta = await session._load_active_session_meta()
     active_session_id = active_meta.get("session_id", "") if active_meta else ""
+    
+    # List existing chats
+    chats = await mgr.list_chats(user_id=user_id, channel=channel)
     
     # Mark each chat's is_active field
     for chat in chats:

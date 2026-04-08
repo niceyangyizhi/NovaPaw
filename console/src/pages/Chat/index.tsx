@@ -54,6 +54,7 @@ export default function ChatPage() {
   }, [location.pathname]);
   const [showModelPrompt, setShowModelPrompt] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [hasActiveSession, setHasActiveSession] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const chatUiRef = useRef<IAgentScopeRuntimeWebUIRef>(null);
   // Store original full-resolution images as array (most recent first)
@@ -78,7 +79,7 @@ export default function ChatPage() {
         
         // Check if current session is active and disable input if not
         const currentSession = sessions.find(s => s.id === chatId);
-        const isActive = currentSession ? (currentSession as any).isActive !== false : true;
+        const isActive = currentSession ? (currentSession as any).isActive === true : true;
         chatUiRef.current?.input?.setDisabled?.(!isActive);
       } catch (e) {
         console.error("Failed to check session active status:", e);
@@ -87,6 +88,30 @@ export default function ChatPage() {
     
     checkSessionActive();
   }, [chatId, navigate]);
+
+  // Re-check session active status when component mounts and when chatId changes
+  useEffect(() => {
+    const checkSessionActive = async () => {
+      try {
+        const sessions = await sessionApi.getSessionList();
+        
+        // Update hasActiveSession state
+        const activeSession = sessions.find(s => (s as any).isActive === true);
+        setHasActiveSession(!!activeSession);
+        
+        if (!chatId || !chatUiRef.current) return;
+        
+        // Check if current session is active and disable input if not
+        const currentSession = sessions.find(s => s.id === chatId);
+        const isActive = currentSession ? (currentSession as any).isActive === true : true;
+        chatUiRef.current?.input?.setDisabled?.(!isActive);
+      } catch (e) {
+        console.error("Failed to check session active status:", e);
+      }
+    };
+    
+    checkSessionActive();
+  }, [chatId]);
 
   useEffect(() => {
     const styleId = "novapaw-input-attachment-preview-style";
@@ -351,17 +376,43 @@ export default function ChatPage() {
     return sessionApi.getSession(sessionId);
   }, []);
 
-  // Session creation is disabled - all sessions are automatically created daily
-  // Users cannot manually create new sessions
+  // Session creation is enabled only when today's session doesn't exist
   const wrappedSessionApi = useMemo(
     () => ({
       getSessionList: getSessionListWrapped,
       getSession: getSessionWrapped,
-      // createSession is intentionally omitted to disable manual session creation
+      createSession: async (session: any) => {
+        console.log("createSession called");
+        try {
+          // First get the latest session list from backend to check for active session
+          console.log("Getting session list...");
+          const sessions = await sessionApi.getSessionList();
+          console.log("Session list received:", sessions);
+          
+          const activeSession = sessions.find(s => (s as any).isActive === true);
+          console.log("Active session found:", activeSession);
+          
+          if (activeSession) {
+            // Today's session already exists, don't create a new one
+            console.log("Today's session already exists, skipping creation");
+            return sessions;
+          }
+          
+          // Today's session doesn't exist, allow creation
+          console.log("Creating new session for today");
+          const result = await sessionApi.createSession(session);
+          console.log("Session created:", result);
+          return result;
+        } catch (error) {
+          console.error("Error in createSession:", error);
+          // Return current session list in case of error
+          return sessionApi.sessionList;
+        }
+      },
       updateSession: sessionApi.updateSession.bind(sessionApi),
       removeSession: sessionApi.removeSession.bind(sessionApi),
     }),
-    [],
+    [getSessionListWrapped, getSessionWrapped, hasActiveSession],
   );
 
   const customFetch = useCallback(
@@ -435,7 +486,7 @@ export default function ChatPage() {
           customRequest: customUploadRequest,
         },
       },
-      session: { multiple: true, api: wrappedSessionApi },
+      session: { multiple: false, api: wrappedSessionApi, create: !hasActiveSession },
       api: {
         ...defaultConfig.api,
         fetch: customFetch,
@@ -447,7 +498,7 @@ export default function ChatPage() {
         "weather search mock": Weather,
       },
     } as unknown as IAgentScopeRuntimeWebUIOptions;
-  }, [wrappedSessionApi, customFetch, t, customUploadRequest]);
+  }, [wrappedSessionApi, customFetch, t, customUploadRequest, hasActiveSession]);
 
   return (
     <div ref={containerRef} style={{ height: "100%", width: "100%" }}>

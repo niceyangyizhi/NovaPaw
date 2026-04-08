@@ -227,7 +227,7 @@ const convertMessages = (
 const chatSpecToSession = (chat: ChatSpec): ExtendedSession =>
   ({
     id: chat.id,
-    name: (chat as ChatSpec & { name?: string }).name || DEFAULT_SESSION_NAME,
+    name: (chat as ChatSpec & { name?: string }).name || chat.session_id,
     sessionId: chat.session_id,
     userId: chat.user_id,
     channel: chat.channel,
@@ -269,8 +269,7 @@ const resolveRealId = (
 // ---------------------------------------------------------------------------
 
 class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
-  private sessionList: IAgentScopeRuntimeWebUISession[] = [];
-  private activeSessionId: string | null = null;
+  sessionList: IAgentScopeRuntimeWebUISession[] = [];
 
   /**
    * Deduplicates concurrent getSessionList calls so that two parallel
@@ -305,9 +304,13 @@ class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
     window.currentSessionId = sessionId;
     window.currentUserId = DEFAULT_USER_ID;
     window.currentChannel = DEFAULT_CHANNEL;
+    // Use current date + original title as session name if sessionId is a timestamp
+    const isTimestamp = /^\d+$/.test(sessionId);
+    const today = new Date().toISOString().split('T')[0];
+    const name = isTimestamp ? `${today} · ${DEFAULT_SESSION_NAME}` : DEFAULT_SESSION_NAME;
     return {
       id: sessionId,
-      name: DEFAULT_SESSION_NAME,
+      name: name,
       sessionId,
       userId: DEFAULT_USER_ID,
       channel: DEFAULT_CHANNEL,
@@ -479,13 +482,14 @@ class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
     const chatHistory = await api.getChat(sessionId);
     const session: ExtendedSession = {
       id: sessionId,
-      name: fromList?.name || sessionId,
-      sessionId: fromList?.sessionId || sessionId,
-      userId: fromList?.userId || DEFAULT_USER_ID,
-      channel: fromList?.channel || DEFAULT_CHANNEL,
-      messages: convertMessages(chatHistory.messages || []),
-      meta: fromList?.meta || {},
-    };
+          name: fromList?.name || sessionId,
+          sessionId: fromList?.sessionId || sessionId,
+          userId: fromList?.userId || DEFAULT_USER_ID,
+          channel: fromList?.channel || DEFAULT_CHANNEL,
+          messages: convertMessages(chatHistory.messages || []),
+          meta: fromList?.meta || {},
+          isActive: fromList?.isActive,
+        };
 
     this.updateWindowVariables(session);
     return session;
@@ -526,14 +530,60 @@ class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
   }
 
   async createSession(session: Partial<IAgentScopeRuntimeWebUISession>) {
-    session.id = Date.now().toString();
+    // Use current date as sessionId (YYYY-MM-DD format)
+    const sessionId = new Date().toISOString().split('T')[0];
+    // Use current date + original title as session name
+    const today = new Date().toISOString().split('T')[0];
+    const originalTitle = session.name || DEFAULT_SESSION_NAME;
+    const name = `${today} · ${originalTitle}`;
 
+    // First check if today's session already exists in backend
+    try {
+      const existingChats = await api.listChats();
+      const todayChat = existingChats.find((chat: ChatSpec) => chat.is_active === true);
+      
+      if (todayChat) {
+        // Today's session already exists, don't create a new one
+        console.log("Today's session already exists in backend, skipping creation");
+        // Refresh session list from backend
+        await this.getSessionList();
+        return this.sessionList;
+      }
+    } catch (error) {
+      console.error("Error checking existing chats:", error);
+    }
+
+    // Today's session doesn't exist, create it
     const extended: ExtendedSession = {
-      ...session,
-      sessionId: session.id,
+      id: Date.now().toString(),
+      name: name,
+      sessionId: sessionId,
       userId: DEFAULT_USER_ID,
       channel: DEFAULT_CHANNEL,
+      messages: [],
+      meta: {},
+      // Mark as active since this is today's session
+      isActive: true,
     } as ExtendedSession;
+
+    // Call backend API to create the chat. If backend creation fails, do not
+    // keep a local optimistic session, otherwise the UI can get stuck waiting
+    // for a realId that will never arrive.
+    try {
+      const chatSpec = await api.createChat({
+        session_id: sessionId,
+        user_id: DEFAULT_USER_ID,
+        channel: DEFAULT_CHANNEL,
+        name: name,
+        is_active: true,
+      });
+      // Update the session with the real ID from backend
+      extended.realId = chatSpec.id;
+    } catch (error) {
+      console.error("Error creating chat:", error);
+      await this.getSessionList();
+      return [...this.sessionList];
+    }
 
     this.updateWindowVariables(extended);
     this.sessionList.unshift(extended);
