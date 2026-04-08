@@ -38,6 +38,7 @@ from .tools import (
     send_file_to_user,
     write_file,
     create_memory_search_tool,
+    create_long_term_memory_tools,
 )
 from .utils import process_file_and_media_blocks_in_message
 from ..agents.memory import MemoryManager
@@ -203,6 +204,18 @@ class NovaPawAgent(ToolGuardMixin, ReActAgent):
             else:
                 logger.debug("Skipped disabled tool: %s", tool_name)
 
+        # Register long-term memory tools
+        write_ltm, read_ltm = create_long_term_memory_tools()
+        toolkit.register_tool_function(
+            write_ltm,
+            namesake_strategy=namesake_strategy,
+        )
+        toolkit.register_tool_function(
+            read_ltm,
+            namesake_strategy=namesake_strategy,
+        )
+        logger.debug("Registered long-term memory tools")
+
         return toolkit
 
     def _register_skills(self, toolkit: Toolkit) -> None:
@@ -239,6 +252,18 @@ class NovaPawAgent(ToolGuardMixin, ReActAgent):
         sys_prompt = build_system_prompt_from_working_dir()
         if self._env_context is not None:
             sys_prompt = self._env_context + "\n\n" + sys_prompt
+
+        # Inject unified memory context (Funnel Architecture - TASK-007)
+        try:
+            from .memory.memory_loader import MemoryLoader
+            memory_base_dir = os.path.expanduser("~/.novapaw")
+            loader = MemoryLoader(memory_base_dir, token_budget=10000)
+            memory_context = loader.inject_context()
+            if memory_context:
+                sys_prompt = sys_prompt + "\n\n# 📚 漏斗记忆上下文\n" + memory_context
+        except Exception as e:
+            logger.warning("Failed to inject unified memory context: %s", e)
+
         return sys_prompt
 
     def _setup_memory_manager(

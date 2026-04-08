@@ -117,6 +117,11 @@ def build_daily_memory_guidance(
             "以下是最近几天已沉淀的日记忆摘要。它们是补充背景，不是刚性指令；"
             "仅在与当前请求相关时引用，避免机械重复。\n\n"
             + "\n".join(lines)
+            + "\n\n"
+            "⚠️ **实体隔离规则**：引用或更新这些记忆时，"
+            "必须使用完整姓名（如'刘有为'、'程姗姗'），"
+            "禁止使用孤立代词（她/他/对方）。"
+            "多人物记录使用 `[实体] -> [行为] -> [结果]` 格式。"
         )
 
     return (
@@ -125,4 +130,8 @@ def build_daily_memory_guidance(
         "Use them as optional background when relevant to the current request, "
         "and avoid repeating them verbatim.\n\n"
         + "\n".join(lines)
+        + "\n\n"
+        "⚠️ **Entity Separation Rule**: When referencing or updating these "
+        "memories, always use FULL NAMES. Never use isolated pronouns "
+        "(she/he/they). Use `[Entity] -> [Action] -> [Result]` format."
     )
