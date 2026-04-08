@@ -78,11 +78,30 @@ class AgentRunner(Runner):
         Special case: session_id="main" is preserved for heartbeat isolation.
         Heartbeat keeps its own session and only writes to daily session when
         a message is actually sent (handled separately in heartbeat_tools).
+
+        Even for heartbeat requests, we still check for daily rollover to
+        ensure _finalize_closed_session is called when the day changes.
         """
         requested_session_id = getattr(request, "session_id", "") or ""
 
-        # Preserve "main" session for heartbeat isolation
+        # Preserve "main" session for heartbeat isolation, but still check
+        # for daily rollover so the previous day's session gets finalized.
         if requested_session_id == "main":
+            # Check if a previous daily session needs finalization
+            active_meta = await self.session._load_active_session_meta()
+            current_session_id = active_meta.get("session_id", "")
+            today_id = self.session._daily_session_id()
+
+            if current_session_id and current_session_id != today_id:
+                logger.info(
+                    "Heartbeat detected day change: %s -> %s, finalizing",
+                    current_session_id,
+                    today_id,
+                )
+                await self._finalize_closed_session(
+                    current_session_id, today_id,
+                )
+
             return request, SessionResolution(session_id="main")
 
         resolution = await self.session.resolve_active_session(
