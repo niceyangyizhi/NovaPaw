@@ -19,6 +19,13 @@ const TYPE_PLUGIN_CALL_OUTPUT = "plugin_call_output";
 // const CARD_REQUEST = "AgentScopeRuntimeRequestCard";
 const CARD_RESPONSE = "AgentScopeRuntimeResponseCard";
 
+function getLocalDateString(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 // ---------------------------------------------------------------------------
 // Window globals
 // ---------------------------------------------------------------------------
@@ -306,7 +313,7 @@ class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
     window.currentChannel = DEFAULT_CHANNEL;
     // Use current date + original title as session name if sessionId is a timestamp
     const isTimestamp = /^\d+$/.test(sessionId);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     const name = isTimestamp ? `${today} · ${DEFAULT_SESSION_NAME}` : DEFAULT_SESSION_NAME;
     return {
       id: sessionId,
@@ -531,9 +538,9 @@ class SessionApi implements IAgentScopeRuntimeWebUISessionAPI {
 
   async createSession(session: Partial<IAgentScopeRuntimeWebUISession>) {
     // Use current date as sessionId (YYYY-MM-DD format)
-    const sessionId = new Date().toISOString().split('T')[0];
+    const sessionId = getLocalDateString();
     // Use current date + original title as session name
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     const originalTitle = session.name || DEFAULT_SESSION_NAME;
     const name = `${today} · ${originalTitle}`;
 

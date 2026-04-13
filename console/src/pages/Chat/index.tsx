@@ -24,6 +24,8 @@ interface CustomWindow extends Window {
 
 declare const window: CustomWindow;
 
+const DEFAULT_SESSION_NAME = "New Chat";
+
 function buildModelError(): Response {
   return new Response(
     JSON.stringify({
@@ -151,38 +153,7 @@ export default function ChatPage() {
     };
   }, []);
 
-  // Handle clipboard paste for images
   useEffect(() => {
-    const handlePaste = async (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      for (const item of items) {
-        if (item.type.startsWith("image/")) {
-          e.preventDefault();
-          const file = item.getAsFile();
-          if (!file) continue;
-
-          // Find the attachment input and trigger upload
-          const container = containerRef.current;
-          if (!container) continue;
-
-          // Find upload input in the chat component
-          const uploadInput = container.querySelector(
-            'input[type="file"]',
-          ) as HTMLInputElement;
-          if (uploadInput) {
-            // Create a DataTransfer to set files on the input
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            uploadInput.files = dataTransfer.files;
-            uploadInput.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-          break;
-        }
-      }
-    };
-
     // Handle click on attachment thumbnails to preview full image
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -232,10 +203,8 @@ export default function ChatPage() {
       }
     };
 
-    document.addEventListener("paste", handlePaste);
     document.addEventListener("click", handleClick, true);
     return () => {
-      document.removeEventListener("paste", handlePaste);
       document.removeEventListener("click", handleClick, true);
     };
   }, []);
@@ -345,6 +314,16 @@ export default function ChatPage() {
     const sessions = await sessionApi.getSessionList();
     const currentChatId = chatIdRef.current;
 
+    const activeIdx = sessions.findIndex((s) => (s as any).isActive === true);
+    if (activeIdx >= 0) {
+      if (activeIdx === 0) return sessions;
+      return [
+        sessions[activeIdx],
+        ...sessions.slice(0, activeIdx),
+        ...sessions.slice(activeIdx + 1),
+      ];
+    }
+
     if (currentChatId) {
       const idx = sessions.findIndex((s) => s.id === currentChatId);
       if (idx > 0) {
@@ -415,6 +394,41 @@ export default function ChatPage() {
     [getSessionListWrapped, getSessionWrapped, hasActiveSession],
   );
 
+  const ensureWritableConsoleSession = useCallback(async () => {
+    let sessions = await sessionApi.getSessionList();
+    let activeSession = sessions.find(
+      (s) => (s as any).isActive === true,
+    ) as any | undefined;
+
+    if (!activeSession) {
+      await sessionApi.createSession({ name: DEFAULT_SESSION_NAME });
+      sessions = await sessionApi.getSessionList();
+      activeSession = sessions.find(
+        (s) => (s as any).isActive === true,
+      ) as any | undefined;
+    }
+
+    if (!activeSession) return null;
+
+    const targetChatId = activeSession.realId ?? activeSession.id;
+    const currentChatId = chatIdRef.current;
+
+    window.currentSessionId = activeSession.sessionId || "";
+    window.currentUserId = activeSession.userId || "default";
+    window.currentChannel = activeSession.channel || "console";
+
+    if (
+      isChatActiveRef.current &&
+      targetChatId &&
+      currentChatId !== targetChatId
+    ) {
+      lastSessionIdRef.current = targetChatId;
+      navigateRef.current(`/chat/${targetChatId}`, { replace: true });
+    }
+
+    return activeSession;
+  }, []);
+
   const customFetch = useCallback(
     async (data: {
       input: any[];
@@ -437,12 +451,25 @@ export default function ChatPage() {
 
       const { input, biz_params } = data;
       const session = input[input.length - 1]?.session || {};
+      const writableSession = await ensureWritableConsoleSession();
 
       const requestBody = {
         input: input.slice(-1),
-        session_id: window.currentSessionId || session?.session_id || "",
-        user_id: window.currentUserId || session?.user_id || "default",
-        channel: window.currentChannel || session?.channel || "console",
+        session_id:
+          writableSession?.sessionId ||
+          window.currentSessionId ||
+          session?.session_id ||
+          "",
+        user_id:
+          writableSession?.userId ||
+          window.currentUserId ||
+          session?.user_id ||
+          "default",
+        channel:
+          writableSession?.channel ||
+          window.currentChannel ||
+          session?.channel ||
+          "console",
         stream: true,
         ...biz_params,
       };
@@ -460,7 +487,7 @@ export default function ChatPage() {
         signal: data.signal,
       });
     },
-    [],
+    [ensureWritableConsoleSession],
   );
 
   const options = useMemo(() => {
@@ -486,7 +513,7 @@ export default function ChatPage() {
           customRequest: customUploadRequest,
         },
       },
-      session: { multiple: false, api: wrappedSessionApi, create: !hasActiveSession },
+      session: { multiple: true, api: wrappedSessionApi, create: !hasActiveSession },
       api: {
         ...defaultConfig.api,
         fetch: customFetch,

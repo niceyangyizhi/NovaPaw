@@ -14,6 +14,19 @@ from ..channels.schema import DEFAULT_CHANNEL
 
 logger = logging.getLogger(__name__)
 _DATE_SESSION_ID_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_DEFAULT_CHAT_NAME = "New Chat"
+
+
+def _is_placeholder_chat_name(session_id: str, name: str) -> bool:
+    """Whether a chat title is still a placeholder that should be upgraded."""
+    normalized = (name or "").strip()
+    if not normalized:
+        return True
+    if normalized == _DEFAULT_CHAT_NAME or normalized == session_id:
+        return True
+    if normalized == f"{session_id} · {_DEFAULT_CHAT_NAME}":
+        return True
+    return False
 
 
 def _normalize_chat_name(session_id: str, name: str) -> str:
@@ -24,9 +37,9 @@ def _normalize_chat_name(session_id: str, name: str) -> str:
     """
     normalized = (name or "").strip()
     if not _DATE_SESSION_ID_RE.match(session_id):
-        return normalized or "New Chat"
+        return normalized or _DEFAULT_CHAT_NAME
 
-    if not normalized or normalized in {"New Chat", session_id}:
+    if _is_placeholder_chat_name(session_id, normalized):
         return session_id
     if normalized.startswith(session_id):
         return normalized
@@ -121,7 +134,10 @@ class ChatManager:
             existing = await self._repo.get_chat_by_id(session_id)
             if existing:
                 preferred_name = existing.name
-                if (existing.name or "").strip() in {"", "New Chat", session_id}:
+                if _is_placeholder_chat_name(
+                    session_id,
+                    existing.name,
+                ):
                     preferred_name = name
                 existing.name = _normalize_chat_name(
                     session_id,
@@ -163,6 +179,19 @@ class ChatManager:
             Chat spec
         """
         async with self._lock:
+            existing = await self._repo.get_chat_by_id(spec.session_id)
+            if existing:
+                if _is_placeholder_chat_name(spec.session_id, existing.name):
+                    existing.name = _normalize_chat_name(
+                        spec.session_id,
+                        spec.name,
+                    )
+                existing.user_id = existing.user_id or spec.user_id
+                existing.channel = existing.channel or spec.channel
+                existing.meta.update(spec.meta or {})
+                existing.updated_at = datetime.now(timezone.utc)
+                await self._repo.upsert_chat(existing)
+                return existing
             await self._repo.upsert_chat(spec)
             return spec
 
