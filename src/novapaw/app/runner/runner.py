@@ -108,6 +108,19 @@ class AgentRunner(Runner):
             requested_session_id=requested_session_id,
         )
 
+        # If a rollover occurred, finalize the previous session before
+        # proceeding. This ensures closed_at and daily_summary are written.
+        if resolution.rolled_over and resolution.previous_session_id:
+            logger.info(
+                "Request triggered rollover finalization: %s -> %s",
+                resolution.previous_session_id,
+                resolution.session_id,
+            )
+            await self._finalize_closed_session(
+                resolution.previous_session_id,
+                resolution.session_id,
+            )
+
         if hasattr(request, "model_copy"):
             request = request.model_copy(
                 update={"session_id": resolution.session_id},
