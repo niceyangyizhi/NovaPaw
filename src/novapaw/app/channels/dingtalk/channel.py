@@ -22,6 +22,7 @@ import logging
 import mimetypes
 import os
 import threading
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from urllib.parse import urlparse
@@ -121,8 +122,9 @@ class DingTalkChannel(BaseChannel):
         self._http: Optional[aiohttp.ClientSession] = None
 
         # Store sessionWebhook for proactive send (in-memory).
-        # Key is a handle string, e.g. "dingtalk:sw:<sender>"
-        self._session_webhook_store: Dict[str, str] = {}
+        # Key is a handle string, e.g. "dingtalk:sw:<sender>".
+        # Value is {"session_webhook": str, "expired_time": int|None}.
+        self._session_webhook_store: Dict[str, Dict[str, Any]] = {}
         self._session_webhook_lock = asyncio.Lock()
 
         # Time debounce disabled: manager drains same-session from queue
@@ -270,8 +272,9 @@ class DingTalkChannel(BaseChannel):
                 data = json.load(f)
             if isinstance(data, dict):
                 for k, v in data.items():
-                    if isinstance(v, str) and v:
-                        self._session_webhook_store[k] = v
+                    normalized = self._normalize_session_webhook_entry(v)
+                    if normalized is not None:
+                        self._session_webhook_store[k] = normalized
         except Exception:
             logger.debug(
                 "dingtalk load session_webhook store from %s failed",
@@ -298,10 +301,53 @@ class DingTalkChannel(BaseChannel):
                 exc_info=True,
             )
 
+    @staticmethod
+    def _normalize_session_webhook_entry(
+        value: Any,
+    ) -> Optional[Dict[str, Any]]:
+        """Normalize old/new persisted webhook entry formats."""
+        if isinstance(value, str) and value:
+            return {
+                "session_webhook": value,
+                "expired_time": None,
+            }
+        if not isinstance(value, dict):
+            return None
+        session_webhook = value.get("session_webhook") or value.get(
+            "sessionWebhook",
+        )
+        if not isinstance(session_webhook, str) or not session_webhook:
+            return None
+        expired_time = value.get("expired_time") or value.get(
+            "sessionWebhookExpiredTime",
+        )
+        try:
+            expired_time = int(expired_time) if expired_time is not None else None
+        except (TypeError, ValueError):
+            expired_time = None
+        return {
+            "session_webhook": session_webhook,
+            "expired_time": expired_time,
+        }
+
+    @staticmethod
+    def _is_session_webhook_expired(expired_time: Optional[int]) -> bool:
+        if expired_time is None:
+            return False
+        return expired_time <= int(time.time() * 1000)
+
+    def _delete_session_webhook_locked(self, webhook_key: str) -> bool:
+        removed = self._session_webhook_store.pop(webhook_key, None)
+        if removed is None:
+            return False
+        self._save_session_webhook_store_to_disk()
+        return True
+
     async def _save_session_webhook(
         self,
         webhook_key: str,
         session_webhook: str,
+        expired_time: Optional[int] = None,
     ) -> None:
         if not webhook_key or not session_webhook:
             logger.debug(
@@ -312,13 +358,17 @@ class DingTalkChannel(BaseChannel):
             return
         session_in_url = session_param_from_webhook_url(session_webhook)
         logger.info(
-            "dingtalk _save_session_webhook: "
-            "webhook_key=%s session_from_url=%s",
+            "dingtalk _save_session_webhook: webhook_key=%s "
+            "session_from_url=%s expired_time=%s",
             webhook_key,
             session_in_url,
+            expired_time,
         )
         async with self._session_webhook_lock:
-            self._session_webhook_store[webhook_key] = session_webhook
+            self._session_webhook_store[webhook_key] = {
+                "session_webhook": session_webhook,
+                "expired_time": expired_time,
+            }
             self._save_session_webhook_store_to_disk()
 
     async def _load_session_webhook(self, webhook_key: str) -> Optional[str]:
@@ -326,23 +376,47 @@ class DingTalkChannel(BaseChannel):
             logger.debug("dingtalk _load_session_webhook: empty webhook_key")
             return None
         async with self._session_webhook_lock:
-            out = self._session_webhook_store.get(webhook_key)
-            if out is not None:
+            entry = self._session_webhook_store.get(webhook_key)
+            if entry is not None:
+                expired_time = entry.get("expired_time")
+                if self._is_session_webhook_expired(expired_time):
+                    logger.info(
+                        "dingtalk _load_session_webhook expired(in-memory): "
+                        "webhook_key=%s expired_time=%s",
+                        webhook_key,
+                        expired_time,
+                    )
+                    self._delete_session_webhook_locked(webhook_key)
+                    return None
+                out = entry["session_webhook"]
                 logger.info(
                     "dingtalk _load_session_webhook hit: webhook_key=%s "
-                    "session_from_url=%s",
+                    "session_from_url=%s expired_time=%s",
                     webhook_key,
                     session_param_from_webhook_url(out),
+                    expired_time,
                 )
                 return out
             self._load_session_webhook_store_from_disk()
-            out = self._session_webhook_store.get(webhook_key)
-            if out is not None:
+            entry = self._session_webhook_store.get(webhook_key)
+            if entry is not None:
+                expired_time = entry.get("expired_time")
+                if self._is_session_webhook_expired(expired_time):
+                    logger.info(
+                        "dingtalk _load_session_webhook expired(disk): "
+                        "webhook_key=%s expired_time=%s",
+                        webhook_key,
+                        expired_time,
+                    )
+                    self._delete_session_webhook_locked(webhook_key)
+                    return None
+                out = entry["session_webhook"]
                 logger.info(
                     "dingtalk _load_session_webhook hit(disk): webhook_key=%s "
-                    "session_from_url=%s",
+                    "session_from_url=%s expired_time=%s",
                     webhook_key,
                     session_param_from_webhook_url(out),
+                    expired_time,
                 )
                 return out
             logger.info(
@@ -350,6 +424,31 @@ class DingTalkChannel(BaseChannel):
                 webhook_key,
             )
             return None
+
+    async def _invalidate_session_webhook(
+        self,
+        session_webhook: str,
+    ) -> None:
+        """Remove stale session webhook entries pointing to the same URL."""
+        if not session_webhook:
+            return
+        async with self._session_webhook_lock:
+            removed_keys = [
+                key
+                for key, entry in self._session_webhook_store.items()
+                if entry.get("session_webhook") == session_webhook
+            ]
+            if not removed_keys:
+                return
+            for key in removed_keys:
+                self._session_webhook_store.pop(key, None)
+            self._save_session_webhook_store_to_disk()
+        logger.info(
+            "dingtalk invalidated sessionWebhook cache: session_from_url=%s "
+            "keys=%s",
+            session_param_from_webhook_url(session_webhook),
+            removed_keys,
+        )
 
     # ---------------------------
     # Reply via stream thread
@@ -534,6 +633,8 @@ class DingTalkChannel(BaseChannel):
                         errmsg,
                         body_text[:300],
                     )
+                    if errcode == 300001 or "session 不存在" in str(errmsg):
+                        await self._invalidate_session_webhook(session_webhook)
                     return False
                 logger.info(
                     "dingtalk sessionWebhook POST ok: msgtype=%s status=%s "
@@ -1333,6 +1434,13 @@ class DingTalkChannel(BaseChannel):
                 user_id=request.user_id or "",
                 session_id=request.session_id or fallback_sid,
             )
+            raw_expired_time = meta.get("session_webhook_expired_time")
+            try:
+                expired_time = (
+                    int(raw_expired_time) if raw_expired_time is not None else None
+                )
+            except (TypeError, ValueError):
+                expired_time = None
             logger.info(
                 "dingtalk _process_one_request: storing webhook "
                 "session_id=%s conversation_id=%s webhook_key=%s",
@@ -1343,6 +1451,7 @@ class DingTalkChannel(BaseChannel):
             await self._save_session_webhook(
                 webhook_key,
                 session_webhook,
+                expired_time=expired_time,
             )
 
         async for event in self._process(request):
