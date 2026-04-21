@@ -61,15 +61,9 @@ export default function MainLayout() {
         <Content className="page-container">
           <ConsoleCronBubble />
           <div className="page-content">
-            <div
-              style={{
-                display: isChatPage ? undefined : "none",
-                height: "100%",
-              }}
-            >
+            {isChatPage ? (
               <Chat />
-            </div>
-            {!isChatPage && (
+            ) : (
               <Routes>
                 <Route path="/channels" element={<ChannelsPage />} />
                 <Route path="/sessions" element={<SessionsPage />} />
