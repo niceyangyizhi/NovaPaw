@@ -32,6 +32,9 @@ class BufferOverflowError(MemoryStoreError):
 class MemoryStore:
     """Manages a single memory file (e.g., long_term.md, daily/2026-04-08.md)."""
 
+    # Smart compaction threshold: 5000 chars
+    BLOCK_TRUNCATION_LIMIT = 5000
+
     def __init__(self, file_path: str):
         self.file_path = Path(file_path)
         self._data = MemoryFile()
@@ -84,6 +87,9 @@ class MemoryStore:
         if not self._data.entries and not self._data.buffer_text.strip():
             return
 
+        # Smart compaction: truncate old blocks if buffer exceeds limit
+        self._compact_buffer_blocks()
+
         # Serialize entries
         yaml_dump = yaml.dump(
             [e.model_dump(exclude={"archived"}) for e in self._data.entries if not e.archived],
@@ -99,6 +105,52 @@ class MemoryStore:
         output = f"---\n{yaml_dump}\n---\n\n# 📝 缓冲区 / 原始上下文\n{buffer_text}\n"
         self.file_path.parent.mkdir(parents=True, exist_ok=True)
         self.file_path.write_text(output, encoding="utf-8")
+
+    def _compact_buffer_blocks(self) -> None:
+        """
+        Block-level Truncation (TASK-008 Safety Net):
+        When buffer exceeds BLOCK_TRUNCATION_LIMIT (5000 chars),
+        split by Markdown headers (## ) or double newlines,
+        keep the newest complete blocks from the end, discard oldest blocks.
+        Ensures semantic integrity (never cuts mid-sentence).
+        """
+        buffer = self._data.buffer_text
+        if len(buffer) <= self.BLOCK_TRUNCATION_LIMIT:
+            return
+
+        # Split into blocks: prefer ## headers, fallback to double newlines
+        # Regex: split on "## " at start of line, or "\n\n\n+"
+        blocks = re.split(r'(?=^## )', buffer, flags=re.MULTILINE)
+        
+        # If splitting by ## didn't produce meaningful blocks (only 1 block),
+        # fallback to splitting by double/triple newlines
+        if len(blocks) <= 1:
+            blocks = re.split(r'\n{2,}', buffer)
+
+        # Trim each block
+        blocks = [b.strip() for b in blocks if b.strip()]
+        if not blocks:
+            return
+
+        # Accumulate from newest (end) to oldest until we hit the limit
+        kept_blocks: list[str] = []
+        current_len = 0
+
+        for block in reversed(blocks):
+            block_len = len(block) + 2  # +2 for separator
+            if current_len + block_len > self.BLOCK_TRUNCATION_LIMIT and kept_blocks:
+                break
+            kept_blocks.append(block)
+            current_len += block_len
+
+        # Reverse back to chronological order and rejoin
+        kept_blocks.reverse()
+        self._data.buffer_text = "\n\n".join(kept_blocks)
+
+        print(
+            f"📦 Buffer compaction triggered: "
+            f"original {len(buffer)} chars -> compacted to {len(self._data.buffer_text)} chars"
+        )
 
     # ------------------------------------------------------------------
     # Mutation & Conflict Resolution
