@@ -115,6 +115,7 @@ async def test_add_custom_provider_and_reload_from_storage(
     assert loaded is not None
     assert isinstance(loaded, OpenAIProvider)
     assert loaded.is_custom is True
+    assert loaded.support_model_discovery is True
     assert loaded.base_url == "https://custom.example/v1"
     assert loaded.api_key == "sk-custom"
     assert [m.id for m in loaded.models] == ["custom-model"]
@@ -122,6 +123,17 @@ async def test_add_custom_provider_and_reload_from_storage(
     assert isinstance(loaded_builtin_conflict, OpenAIProvider)
     assert loaded_duplicate is not None
     assert isinstance(loaded_duplicate, OpenAIProvider)
+
+
+def test_builtin_zenmux_provider_registered(isolated_secret_dir) -> None:
+    manager = ProviderManager()
+
+    provider = manager.get_provider("zenmux")
+
+    assert provider is not None
+    assert isinstance(provider, OpenAIProvider)
+    assert provider.base_url == "https://zenmux.ai/api/v1"
+    assert provider.support_model_discovery is True
 
 
 async def test_activate_provider_persists_active_model(

@@ -28,14 +28,30 @@ class OpenAIProvider(Provider):
     @staticmethod
     def _normalize_models_payload(payload: Any) -> List[ModelInfo]:
         models: List[ModelInfo] = []
-        rows = getattr(payload, "data", [])
+        if isinstance(payload, dict):
+            rows = payload.get("data", [])
+        else:
+            rows = getattr(payload, "data", payload)
         for row in rows or []:
-            model_id = str(getattr(row, "id", "") or "").strip()
+            if isinstance(row, dict):
+                raw_id = row.get("id", "")
+                raw_name = (
+                    row.get("display_name", "")
+                    or row.get("name", "")
+                    or raw_id
+                )
+            else:
+                raw_id = getattr(row, "id", "")
+                raw_name = (
+                    getattr(row, "display_name", "")
+                    or getattr(row, "name", "")
+                    or raw_id
+                )
+
+            model_id = str(raw_id or "").strip()
             if not model_id:
                 continue
-            model_name = (
-                str(getattr(row, "name", "") or model_id).strip() or model_id
-            )
+            model_name = str(raw_name or model_id).strip() or model_id
             models.append(ModelInfo(id=model_id, name=model_name))
 
         deduped: List[ModelInfo] = []

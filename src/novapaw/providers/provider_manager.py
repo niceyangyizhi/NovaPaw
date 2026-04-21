@@ -137,6 +137,14 @@ PROVIDER_OPENAI = OpenAIProvider(
     freeze_url=True,
 )
 
+PROVIDER_ZENMUX = OpenAIProvider(
+    id="zenmux",
+    name="ZenMux",
+    base_url="https://zenmux.ai/api/v1",
+    api_key_prefix="",
+    support_model_discovery=True,
+)
+
 PROVIDER_AZURE_OPENAI = OpenAIProvider(
     id="azure-openai",
     name="Azure OpenAI",
@@ -224,6 +232,7 @@ class ProviderManager:
         self._add_builtin(PROVIDER_DASHSCOPE)
         self._add_builtin(PROVIDER_ALIYUN_CODINGPLAN)
         self._add_builtin(PROVIDER_OPENAI)
+        self._add_builtin(PROVIDER_ZENMUX)
         self._add_builtin(PROVIDER_AZURE_OPENAI)
         self._add_builtin(PROVIDER_ANTHROPIC)
         self._add_builtin(PROVIDER_OLLAMA)
@@ -323,6 +332,7 @@ class ProviderManager:
             provider_data.id,
         )
         provider_payload["is_custom"] = True
+        provider_payload.setdefault("support_model_discovery", True)
         provider = self._provider_from_data(
             provider_payload,
         )  # Validate provider data

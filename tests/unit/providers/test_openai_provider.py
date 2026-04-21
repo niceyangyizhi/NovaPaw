@@ -56,7 +56,11 @@ async def test_check_connection_api_error_returns_false(monkeypatch) -> None:
 async def test_list_model_normalizes_and_deduplicates(monkeypatch) -> None:
     provider = _make_provider()
     rows = [
-        SimpleNamespace(id="gpt-4o-mini", name="GPT-4o Mini"),
+        SimpleNamespace(
+            id="gpt-4o-mini",
+            name="GPT-4o Mini",
+            display_name="GPT-4o Mini Display",
+        ),
         SimpleNamespace(id="gpt-4o-mini", name="dup"),
         SimpleNamespace(id="gpt-4.1", name=""),
         SimpleNamespace(id="   ", name="invalid"),
@@ -73,8 +77,28 @@ async def test_list_model_normalizes_and_deduplicates(monkeypatch) -> None:
     models = await provider.fetch_models(timeout=3)
 
     assert [m.id for m in models] == ["gpt-4o-mini", "gpt-4.1"]
-    assert [m.name for m in models] == ["GPT-4o Mini", "gpt-4.1"]
+    assert [m.name for m in models] == ["GPT-4o Mini Display", "gpt-4.1"]
     assert provider.models == []  # should not update provider state
+
+
+def test_normalize_models_payload_supports_dict_rows() -> None:
+    models = OpenAIProvider._normalize_models_payload(
+        {
+            "data": [
+                {
+                    "id": "openai/gpt-5",
+                    "display_name": "GPT-5 via ZenMux",
+                },
+                {
+                    "id": "openai/gpt-5",
+                    "name": "Duplicate",
+                },
+            ],
+        },
+    )
+
+    assert [m.id for m in models] == ["openai/gpt-5"]
+    assert [m.name for m in models] == ["GPT-5 via ZenMux"]
 
 
 async def test_list_model_api_error_returns_empty(monkeypatch) -> None:
