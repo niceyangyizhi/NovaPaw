@@ -13,6 +13,7 @@
 3. **发不发到频道** 由配置里的 **target** 决定：
    - **main**：只跑 NovaPaw，不把回复发到任何频道（适合只做「自检」、结果自己看日志或别处）。
    - **last**：把 NovaPaw 的回复发到你**上次和 NovaPaw 对话的那个频道/会话**（例如上次你在钉钉和它聊，这次心跳的回复就发到钉钉）。
+   - **auto**：NovaPaw 自行判断是否有价值发送。它会根据回复内容决定是否调用 `send_to_channel` 工具，只有在有行动项、重要提醒或实质性内容时才会发送消息给你。
 
 还可以设置 **active hours**（活跃时段）：只在每天的某段时间内跑心跳（例如 08:00–22:00），其余时间不跑。
 
@@ -46,7 +47,7 @@
 | 字段        | 含义                       | 示例                                         |
 | ----------- | -------------------------- | -------------------------------------------- |
 | every       | 间隔多久跑一次             | `"30m"`、`"1h"`、`"2h30m"`、`"90s"`          |
-| target      | 回复发到哪                 | `"main"` 不发送；`"last"` 发到上次对话的频道 |
+| target      | 回复发到哪                 | `"main"` 不发送；`"last"` 发到上次对话的频道；`"auto"` 自动判断是否发送 |
 | activeHours | 可选，只在每天这段时间内跑 | `{ "start": "08:00", "end": "22:00" }`       |
 
 示例（只跑 NovaPaw、不发到频道，每 30 分钟）：
@@ -77,6 +78,87 @@
 ```
 
 改完保存 config.json；若服务在跑，会按新配置生效（部分实现可能需重启，以实际为准）。
+
+---
+
+## target="auto" 模式（推荐）
+
+`target="auto"` 让 NovaPaw 自行判断心跳回复是否有价值发送给你，避免「无更新」类消息打扰。
+
+### 工作原理
+
+当 `target="auto"` 时，NovaPaw 会：
+
+1. **注册 `send_to_channel` 工具** —— 这是一个专门用于发送心跳消息的工具
+2. **添加系统提示** —— 指导 LLM 在什么情况下应该调用此工具
+3. **LLM 自主决策** —— LLM 根据回复内容决定是否调用工具发送消息
+
+### Tool 参数
+
+```json
+{
+  "name": "send_to_channel",
+  "description": "将心跳回复发送给用户",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "content": {
+        "type": "string",
+        "description": "要发送的内容"
+      }
+    },
+    "required": ["content"]
+  }
+}
+```
+
+### 判断标准
+
+**LLM 被指导在以下情况调用工具（发送）**：
+- ✅ 有行动项、待办、任务需要提醒用户
+- ✅ 有重要提醒或建议值得用户注意
+- ✅ 有用户等待的信息或新发现
+- ✅ 有具体的下一步建议
+
+**LLM 被指导在以下情况不调用工具（不发送）**：
+- ❌ 纯确认性回复（如"好的"、"收到了"、"无更新"）
+- ❌ 没有实质内容的回复
+- ❌ 重复之前的内容
+
+### 配置示例
+
+```json
+"agents": {
+  "defaults": {
+    "heartbeat": {
+      "every": "6h",
+      "target": "auto",
+      "activeHours": { "start": "10:00", "end": "23:00" }
+    }
+  }
+}
+```
+
+### 优势
+
+| 优势 | 说明 |
+|------|------|
+| **真正智能** | LLM 理解完整上下文，不是关键词匹配 |
+| **零额外调用** | 心跳本来就要调用 LLM，只是多一个 tool 选项 |
+| **部分可观测** | 可以从 tool 调用与 heartbeat 日志看出是否尝试发送、是否发送成功 |
+| **架构优雅** | 复用现有 tool calling 机制，无需特殊逻辑 |
+
+### 日志示例
+
+```
+# LLM 决定发送并发送成功
+INFO send_to_channel called: channel=dingtalk, user_id=user123..., content_len=42
+INFO send_to_channel: message sent successfully
+INFO heartbeat completed (target=auto, dispatched=True)
+
+# LLM 决定不发送
+INFO heartbeat completed (target=auto, no dispatch attempted)
+```
 
 ---
 
